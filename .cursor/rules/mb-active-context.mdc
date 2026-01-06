@@ -1,0 +1,33 @@
+---
+description: SOURCE OF TRUTH for the current project state. Contains session focus, active tasks, and recent decisions. MUST READ at the start of tasks. MUST UPDATE upon completion.
+globs: **/*
+---
+
+# Active Context & Session State
+
+## 1. Current Context
+- **Main Focus**: Memory Bank structure established with command-based workflow.
+- **Status**: Setup complete. Ready for development.
+
+## 2. Recent Changes
+| Date | Type | Description |
+| :--- | :--- | :--- |
+| 2026-01-06 | Infra | Created `mb-commands.mdc` with standardized AI commands for self-directed development. |
+| 2026-01-06 | Infra | Created Memory Bank files: `mb-product-context.mdc`, `mb-system-patterns.mdc`, `mb-tech-stack.mdc`. |
+| 2026-01-06 | Infra | Created `mb-active-context.mdc` file. |
+
+## 3. Next Steps (Checklist)
+- [x] Create `mb-product-context.mdc` (Business Context).
+- [x] Create `mb-system-patterns.mdc` (Technical Patterns).
+- [x] Create `mb-tech-stack.mdc` (Technology Definitions).
+- [x] Create `mb-commands.mdc` (Standardized AI Commands).
+- [ ] Begin NestJS project implementation (Phase 1: Setup with Fastify).
+
+## 4. Active Architecture Decisions
+- **Memory Bank**: Migrated from root `/memory` folder to native `.cursor/rules` system.
+- **Format**: `.mdc` files with frontmatter for context routing.
+- **Development Approach**: Command-based workflow (not templates) to maintain hands-on learning and control.
+- **AI Role**: Assistant/guide rather than code generator. User writes code, AI provides analysis and guidance.
+
+## 5. Open Questions / Blockers
+- None at the moment.

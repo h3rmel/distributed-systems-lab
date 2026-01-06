@@ -1,0 +1,340 @@
+---
+description: Engineering patterns, SOLID principles, and code quality standards
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.py"
+---
+
+# System Patterns & Engineering Standards
+
+## Core Architectural Principles
+
+### 1. SOLID Principles (Mandatory)
+
+#### Single Responsibility Principle (SRP)
+- **Files:** Each file should contain one class/interface with a single purpose
+- **Functions:** Each function should perform one well-defined operation
+- **Modules:** Each NestJS module handles one bounded context
+- **Splitting Rule:** If a file exceeds 300 lines or a function exceeds 50 lines, refactor into smaller units
+
+#### Open/Closed Principle
+- Use interfaces and dependency injection for extensibility
+- Add new features by extending, not modifying existing code
+- Example: New webhook providers should extend `BaseWebhookProvider`, not modify the controller
+
+#### Liskov Substitution Principle
+- Subtypes must be substitutable for their base types
+- Implementations must honor interface contracts completely
+
+#### Interface Segregation Principle
+- Define small, focused interfaces rather than large, monolithic ones
+- Clients should not depend on interfaces they don't use
+
+#### Dependency Inversion Principle
+- Depend on abstractions (interfaces), not concrete implementations
+- Use NestJS dependency injection for all service dependencies
+
+### 2. TypeScript Strict Mode (Enforced)
+
+#### Type Safety Rules
+```typescript
+// ✅ GOOD: Explicit types everywhere
+interface WebhookJobData {
+  provider: string;
+  eventId: string;
+  timestamp: string;
+  data: Record<string, unknown>;
+}
+
+async function processWebhook(job: Job<WebhookJobData>): Promise<Result<void, ProcessingError>> {
+  // Implementation
+}
+
+// ❌ BAD: Using 'any'
+async function processWebhook(job: any): Promise<any> {
+  // This is not acceptable
+}
+```
+
+#### No Implicit Any
+- **tsconfig.json:** `"noImplicitAny": true` must be enabled
+- **Rule:** Never use `any` unless absolutely unavoidable and explicitly justified with a comment
+- **Alternative:** Use `unknown` and perform type guards when dynamic types are required
+
+#### Strict Null Checks
+- **tsconfig.json:** `"strictNullChecks": true` must be enabled
+- Always handle `null` and `undefined` explicitly
+- Use optional chaining (`?.`) and nullish coalescing (`??`)
+
+### 3. Error Handling Strategy (Dual Pattern)
+
+#### Result Pattern (Business Logic)
+
+Use the Result Pattern for expected failures in business logic:
+
+```typescript
+// Define the Result type
+type Result<T, E = Error> = 
+  | { success: true; value: T }
+  | { success: false; error: E };
+
+// Usage example
+async function validateWebhook(data: unknown): Promise<Result<WebhookJobData, ValidationError>> {
+  if (!isValidWebhookData(data)) {
+    return {
+      success: false,
+      error: new ValidationError('Invalid webhook structure')
+    };
+  }
+  
+  return {
+    success: true,
+    value: data as WebhookJobData
+  };
+}
+
+// Consumer must handle both cases
+const result = await validateWebhook(payload);
+if (!result.success) {
+  // Handle validation failure
+  return { accepted: false, reason: result.error.message };
+}
+// Continue with result.value
+```
+
+**When to use Result Pattern:**
+- Validation failures
+- Resource not found scenarios
+- Business rule violations
+- Idempotency check failures
+- Rate limit exceeded
+
+#### Try/Catch Pattern (Execution Boundaries)
+
+Use try/catch at execution boundaries for unexpected errors:
+
+```typescript
+// Controller (execution boundary)
+@Post(':provider')
+async ingest(
+  @Param('provider') provider: string,
+  @Body() dto: CreateWebhookDto,
+): Promise<{ accepted: boolean; jobId?: string }> {
+  try {
+    const jobId = await this.webhookService.enqueue(provider, dto);
+    return { accepted: true, jobId };
+  } catch (error) {
+    this.logger.error('Unexpected error during webhook ingestion', error);
+    throw new InternalServerErrorException('Failed to process webhook');
+  }
+}
+
+// Worker (execution boundary)
+@Process('ingest')
+async handleJob(job: Job<WebhookJobData>): Promise<void> {
+  try {
+    await this.processWebhookJob(job.data);
+  } catch (error) {
+    this.logger.error('Worker processing failed', { jobId: job.id, error });
+    throw error; // BullMQ will handle retry logic
+  }
+}
+```
+
+**When to use Try/Catch:**
+- API route handlers
+- Event listeners
+- Worker processors
+- Top-level application initialization
+- Database connection establishment
+
+### 4. Asynchronous I/O (Non-Blocking)
+
+#### Mandatory Patterns
+```typescript
+// ✅ GOOD: All I/O is async/await
+async function saveWebhook(data: WebhookJobData): Promise<void> {
+  await db.insert(webhooksTable).values(data);
+}
+
+async function checkIdempotency(eventId: string): Promise<boolean> {
+  const exists = await redis.get(`webhook:${eventId}`);
+  return exists !== null;
+}
+
+// ❌ BAD: Synchronous I/O
+function saveWebhookSync(data: WebhookJobData): void {
+  // Never use synchronous database operations
+  db.insertSync(webhooksTable).values(data);
+}
+```
+
+#### Rules
+- All database operations must be async
+- All Redis operations must be async
+- All external API calls must be async
+- All file I/O operations must be async
+- Use `Promise.all()` for parallel independent operations
+
+#### Performance Optimization
+```typescript
+// ✅ GOOD: Parallel execution
+async function enrichWebhookData(eventId: string): Promise<EnrichedData> {
+  const [user, metadata, config] = await Promise.all([
+    fetchUser(eventId),
+    fetchMetadata(eventId),
+    fetchConfig(eventId),
+  ]);
+  
+  return { user, metadata, config };
+}
+
+// ❌ BAD: Sequential execution when not needed
+async function enrichWebhookDataSlow(eventId: string): Promise<EnrichedData> {
+  const user = await fetchUser(eventId);
+  const metadata = await fetchMetadata(eventId);
+  const config = await fetchConfig(eventId);
+  
+  return { user, metadata, config };
+}
+```
+
+### 5. NestJS Architectural Patterns
+
+#### Controller Responsibility
+**Rule:** Controllers must ONLY:
+- Validate DTOs using `class-validator`
+- Call service methods
+- Return HTTP responses
+
+**Controllers must NEVER:**
+- Contain business logic
+- Perform database operations directly
+- Make external API calls
+- Process data transformations
+
+```typescript
+// ✅ GOOD: Thin controller
+@Controller('webhooks')
+export class WebhookController {
+  constructor(private readonly webhookService: WebhookService) {}
+  
+  @Post(':provider')
+  async ingest(
+    @Param('provider') provider: string,
+    @Body() dto: CreateWebhookDto,
+  ): Promise<IngestResponseDto> {
+    return this.webhookService.enqueue(provider, dto);
+  }
+}
+
+// ❌ BAD: Fat controller with business logic
+@Controller('webhooks')
+export class WebhookController {
+  @Post(':provider')
+  async ingest(@Body() dto: CreateWebhookDto): Promise<any> {
+    // Never do this in controllers!
+    const isDuplicate = await redis.get(`webhook:${dto.eventId}`);
+    if (isDuplicate) return { accepted: false };
+    
+    await db.insert(webhooksTable).values(dto);
+    return { accepted: true };
+  }
+}
+```
+
+#### Service Responsibility
+- Contain business logic
+- Orchestrate between multiple providers
+- Handle Result Pattern returns
+- Perform data transformations
+
+#### Module Separation
+- **WebhookModule:** API ingress (Controllers + Queue injection)
+- **WorkerModule:** Background processing (Processors + Database logic)
+- **SharedModule:** Type definitions, interfaces, constants
+- **HealthModule:** Health checks and monitoring
+- **DatabaseModule:** ORM configuration and connection management
+
+### 6. Code Documentation Standards
+
+#### JSDoc/TSDoc Requirements
+```typescript
+/**
+ * Enqueues a webhook event for asynchronous processing.
+ * 
+ * @param provider - The webhook provider identifier (e.g., 'stripe', 'paypal')
+ * @param dto - Validated webhook payload conforming to CreateWebhookDto
+ * @returns Promise resolving to job metadata with unique job ID
+ * @throws {QueueConnectionError} When Redis connection is unavailable
+ * 
+ * @example
+ * ```typescript
+ * const result = await webhookService.enqueue('stripe', webhookDto);
+ * console.log(`Job enqueued with ID: ${result.jobId}`);
+ * ```
+ */
+async enqueue(
+  provider: string,
+  dto: CreateWebhookDto,
+): Promise<EnqueueResult> {
+  // Implementation
+}
+```
+
+**Documentation Required For:**
+- All exported functions
+- All public class methods
+- All interfaces and types (especially shared ones)
+- Complex internal logic (algorithms, business rules)
+
+### 7. Data Structure Efficiency
+
+#### Use Appropriate Collections
+```typescript
+// ✅ GOOD: O(1) lookup with Map
+const providerHandlers = new Map<string, WebhookHandler>([
+  ['stripe', stripeHandler],
+  ['paypal', paypalHandler],
+]);
+
+const handler = providerHandlers.get(provider);
+
+// ❌ BAD: O(n) lookup with Array
+const providerHandlers = [
+  { name: 'stripe', handler: stripeHandler },
+  { name: 'paypal', handler: paypalHandler },
+];
+
+const handler = providerHandlers.find(p => p.name === provider)?.handler;
+```
+
+#### Rules
+- Use `Map` for key-value lookups (not plain objects for dynamic keys)
+- Use `Set` for uniqueness checks (not Array.includes())
+- Use `Array.filter()` sparingly on large datasets
+- Consider caching results of expensive computations
+
+### 8. Logging Standards
+
+#### Structured Logging (nestjs-pino)
+```typescript
+// ✅ GOOD: Structured logs with context
+this.logger.info('Webhook enqueued', {
+  provider,
+  eventId: dto.eventId,
+  jobId,
+  timestamp: new Date().toISOString(),
+});
+
+// ❌ BAD: Unstructured string logs
+this.logger.info(`Webhook from ${provider} enqueued with job ${jobId}`);
+```
+
+#### Log Levels
+- **error:** Unexpected failures, system errors
+- **warn:** Expected failures, validation errors, rate limits
+- **info:** Business events (job enqueued, job completed)
+- **debug:** Development debugging (disabled in production)
+

@@ -1,0 +1,108 @@
+---
+description: Business context and product objectives for the webhook ingestion system
+globs:
+  - doc/**/*.md
+  - README.md
+---
+
+# Product Context & Business Objectives
+
+## Project Overview
+
+**Project Name:** `webhook-ingestor-enterprise`  
+**Type:** High-Throughput Event Ingestion System  
+**System Objective:** Engineer a fault-tolerant API gateway using Enterprise Standards (NestJS) capable of handling 10,000+ requests/second, ensuring maintainability and scalability.
+
+## Primary KPIs
+
+1. **Availability:** 99.99% uptime
+2. **Architecture:** Strict Modular Architecture (Separation of Concerns)
+3. **Performance:** NestJS configured with FastifyAdapter (Not Express)
+4. **Throughput:** 500 Virtual Users (VUs) simultaneously
+5. **Error Rate:** HTTP Failed requests < 1% (ideally 0%)
+6. **Latency (P95):** API Response (202 Accepted) < 100ms
+
+## Business Goals
+
+### Primary Goal
+Provide a reliable, high-performance webhook ingestion system that can handle payment provider webhooks (Stripe, PayPal, etc.) at enterprise scale without data loss.
+
+### Secondary Goals
+- **Scalability:** Horizontal scaling capability via queue-based architecture
+- **Maintainability:** Clean, modular codebase following NestJS enterprise patterns
+- **Observability:** Structured JSON logging for monitoring and debugging
+- **Resilience:** Idempotency checks to prevent duplicate processing
+- **Data Consistency:** Zero data loss between ingestion and persistence
+
+## User Stories
+
+### Story 1: Webhook Provider Integration
+**As a** payment system integrator  
+**I want** to send webhooks to a single ingestion endpoint  
+**So that** I can decouple event generation from event processing
+
+**Acceptance Criteria:**
+- Endpoint accepts POST requests at `/webhooks/:provider`
+- Returns HTTP 202 Accepted immediately
+- Validates payload structure before acceptance
+- Returns job ID for tracking
+
+### Story 2: Asynchronous Processing
+**As a** system operator  
+**I want** webhooks to be processed asynchronously  
+**So that** ingestion throughput is not bottlenecked by processing time
+
+**Acceptance Criteria:**
+- Jobs are queued immediately after validation
+- Processing happens in background workers
+- Queue persistence ensures no job loss on system restart
+- Graceful shutdown waits for job completion
+
+### Story 3: Duplicate Prevention
+**As a** data consistency engineer  
+**I want** duplicate webhooks to be detected and rejected  
+**So that** the same event is never processed twice
+
+**Acceptance Criteria:**
+- Idempotency checks based on `eventId`
+- Redis-based deduplication cache with TTL (24h)
+- Duplicate webhooks return success without re-processing
+- Memory-efficient cache with automatic expiration
+
+### Story 4: System Health Monitoring
+**As a** DevOps engineer  
+**I want** health check endpoints for Kubernetes probes  
+**So that** unhealthy pods are automatically restarted
+
+**Acceptance Criteria:**
+- `/health` endpoint returns system status
+- Checks database connectivity (PostgreSQL)
+- Checks queue connectivity (Redis)
+- Monitors memory heap usage
+
+## System Architecture Philosophy
+
+### Ingress Strategy
+Accept webhooks as fast as possible (< 100ms) and queue for processing. The API layer should have zero business logic.
+
+### Processing Strategy
+Workers process jobs from the queue with proper error handling, retries, and idempotency checks.
+
+### Data Strategy
+Single source of truth in PostgreSQL. Redis is used only for caching and queue management, not as primary storage.
+
+## Success Metrics
+
+### Load Test Validation
+- **K6 Load Test:** Must pass with 500 concurrent users
+- **Total Requests Sent:** Must equal rows in PostgreSQL
+- **HTTP 202 Rate:** > 99%
+- **P95 Response Time:** < 100ms
+
+### Production Readiness
+- Docker Compose setup with health checks
+- Environment-based configuration
+- Structured logging enabled
+- Rate limiting configured
+- CORS and Helmet security headers applied
+

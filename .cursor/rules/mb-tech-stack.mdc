@@ -1,0 +1,389 @@
+---
+description: Technology stack, tooling, and environment configuration
+globs:
+  - package.json
+  - tsconfig.json
+  - requirements.txt
+  - "*.config.js"
+  - "*.config.ts"
+---
+
+# Technology Stack & Tooling
+
+## Backend Framework
+
+### NestJS 10+ (Enterprise Standard)
+- **Primary Framework:** NestJS for modular, scalable architecture
+- **Adapter:** FastifyAdapter (NOT Express) for high performance
+- **Version:** 10.x or higher
+- **Reason:** Enterprise-grade framework with built-in dependency injection, modularity, and TypeScript support
+
+```typescript
+// main.ts - Fastify configuration
+import { NestFactory } from '@nestjs/core';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter()
+  );
+  
+  await app.listen(3000, '0.0.0.0');
+}
+```
+
+**CRITICAL:** Never use ExpressAdapter. All performance benchmarks and optimizations are based on Fastify.
+
+## Language & Runtime
+
+### TypeScript 5.x (Strict Mode)
+- **Version:** 5.x
+- **Mode:** Strict mode enabled
+- **Target:** ES2022 or higher
+
+#### Required tsconfig.json Settings
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "commonjs",
+    "target": "ES2022",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+  }
+}
+```
+
+### Node.js Environment
+- **Version:** Node.js 20 LTS or higher
+- **Package Manager:** npm or pnpm (consistent with team choice)
+- **Environment Variables:** Managed via `.env` and `@nestjs/config`
+
+## Database Layer
+
+### PostgreSQL 16+
+- **Version:** 16.x (Alpine for Docker)
+- **Purpose:** Primary data store for webhook events
+- **Connection:** Via Drizzle ORM
+- **Port:** 5432
+- **Docker Image:** `postgres:16-alpine`
+
+#### Environment Variables
+```bash
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=webhook_user
+DB_PASSWORD=secure_password
+DB_NAME=webhook_db
+```
+
+### Drizzle ORM
+- **Purpose:** Type-safe ORM with zero overhead
+- **Schema Definition:** Define schemas in TypeScript
+- **Migration:** Drizzle Kit for schema migrations
+- **Configuration:** Via NestJS Dynamic Module pattern
+
+```typescript
+// Example schema
+export const webhooksTable = pgTable('webhooks', {
+  id: serial('id').primaryKey(),
+  provider: varchar('provider', { length: 50 }).notNull(),
+  eventId: varchar('event_id', { length: 100 }).notNull().unique(),
+  timestamp: timestamp('timestamp').notNull(),
+  data: jsonb('data').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+```
+
+## Queue System
+
+### Redis 7.x
+- **Version:** 7.x (Alpine for Docker)
+- **Purpose:** Message broker for BullMQ
+- **Persistence:** AOF (Append-Only File) enabled
+- **Port:** 6379
+- **Docker Image:** `redis:7-alpine`
+
+```bash
+# Docker command with persistence
+redis-server --appendonly yes
+```
+
+### BullMQ (via @nestjs/bullmq)
+- **Package:** `@nestjs/bullmq`
+- **Purpose:** Robust job queue with Redis backend
+- **Features:** Job retries, delayed jobs, job priorities, graceful shutdown
+- **Configuration:** Global registration in AppModule
+
+```typescript
+// Queue configuration
+BullModule.forRootAsync({
+  imports: [ConfigModule],
+  useFactory: (config: ConfigService) => ({
+    connection: {
+      host: config.get('REDIS_HOST'),
+      port: config.get('REDIS_PORT'),
+    },
+  }),
+  inject: [ConfigService],
+});
+```
+
+## Validation & Transformation
+
+### class-validator + class-transformer
+- **Purpose:** DTO validation and transformation
+- **Pattern:** Decorator-based validation
+- **Integration:** NestJS ValidationPipe (global)
+
+```typescript
+// DTO example
+import { IsString, IsNotEmpty, IsISO8601, IsObject } from 'class-validator';
+
+export class CreateWebhookDto {
+  @IsString()
+  @IsNotEmpty()
+  provider: string;
+
+  @IsString()
+  @IsNotEmpty()
+  eventId: string;
+
+  @IsISO8601()
+  timestamp: string;
+
+  @IsObject()
+  data: Record<string, unknown>;
+}
+```
+
+## Testing Framework
+
+### Vitest (Unit Testing)
+- **Framework:** Vitest (fast, ESM-native)
+- **Purpose:** Unit and integration tests
+- **Coverage:** Minimum 80% coverage for critical paths
+- **Configuration:** `vitest.config.ts`
+
+```typescript
+// Example test
+describe('WebhookService', () => {
+  it('should enqueue webhook job', async () => {
+    const result = await webhookService.enqueue('stripe', mockDto);
+    expect(result.accepted).toBe(true);
+    expect(result.jobId).toBeDefined();
+  });
+});
+```
+
+### K6 (Load Testing)
+- **Framework:** K6 by Grafana Labs
+- **Purpose:** Performance and load testing
+- **Target:** 500 concurrent users (VUs)
+- **Thresholds:** P95 < 100ms, error rate < 1%
+
+```javascript
+// k6 configuration
+export const options = {
+  stages: [
+    { duration: '10s', target: 50 },
+    { duration: '1m', target: 500 },
+    { duration: '10s', target: 0 },
+  ],
+  thresholds: {
+    http_req_failed: ['rate<0.01'],
+    http_req_duration: ['p(95)<100'],
+  },
+};
+```
+
+## Logging & Observability
+
+### nestjs-pino
+- **Package:** `nestjs-pino`
+- **Format:** JSON structured logs
+- **Purpose:** Production-grade logging for observability
+- **Integration:** Global module in AppModule
+
+```typescript
+// Pino configuration
+LoggerModule.forRoot({
+  pinoHttp: {
+    level: process.env.LOG_LEVEL || 'info',
+    transport: process.env.NODE_ENV !== 'production' 
+      ? { target: 'pino-pretty' }
+      : undefined,
+  },
+});
+```
+
+## Security
+
+### Helmet
+- **Package:** `@fastify/helmet`
+- **Purpose:** Set security HTTP headers
+- **Configuration:** Applied globally at bootstrap
+
+```typescript
+app.register(helmet, {
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: [`'self'`],
+      styleSrc: [`'self'`, `'unsafe-inline'`],
+      imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+    },
+  },
+});
+```
+
+### CORS
+- **Package:** `@fastify/cors`
+- **Purpose:** Cross-Origin Resource Sharing
+- **Configuration:** Environment-based allowed origins
+
+```typescript
+app.register(cors, {
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
+  credentials: true,
+});
+```
+
+### Rate Limiting
+- **Package:** `@fastify/rate-limit`
+- **Purpose:** Prevent abuse and DDoS attacks
+- **Configuration:** Global rate limits
+
+```typescript
+app.register(rateLimit, {
+  max: 100, // Max requests per timeWindow
+  timeWindow: '1 minute',
+});
+```
+
+## Health Checks
+
+### @nestjs/terminus
+- **Purpose:** Health check endpoints for Kubernetes probes
+- **Checks:** Database, Redis, Memory
+- **Endpoint:** `GET /health`
+
+```typescript
+@Get()
+@HealthCheck()
+check() {
+  return this.health.check([
+    () => this.db.pingCheck('database'),
+    () => this.redis.pingCheck('redis'),
+    () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
+  ]);
+}
+```
+
+## Container & Orchestration
+
+### Docker
+- **Base Image:** `node:20-alpine`
+- **Multi-stage Build:** Base -> Deps -> Builder -> Runner
+- **Purpose:** Consistent dev and prod environments
+
+### Docker Compose
+- **Version:** 3.8+
+- **Services:** app, postgres, redis
+- **Healthchecks:** All services must have health checks
+- **Volumes:** Persistent data for postgres and redis
+
+```yaml
+services:
+  postgres:
+    image: postgres:16-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+## Linting & Formatting
+
+### ESLint
+- **Configuration:** `@nestjs/eslint-plugin`
+- **Rules:** Strict TypeScript rules enabled
+- **Integration:** Pre-commit hooks via husky
+
+### Prettier
+- **Configuration:** Standard Prettier with TypeScript support
+- **Integration:** Format on save, pre-commit hooks
+
+```json
+{
+  "semi": true,
+  "trailingComma": "all",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2
+}
+```
+
+## Package Management
+
+### Critical Dependencies
+```json
+{
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/platform-fastify": "^10.0.0",
+    "@nestjs/config": "^3.0.0",
+    "@nestjs/bullmq": "^10.0.0",
+    "drizzle-orm": "^0.29.0",
+    "bullmq": "^5.0.0",
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.0",
+    "nestjs-pino": "^3.5.0",
+    "pino-http": "^9.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/testing": "^10.0.0",
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "drizzle-kit": "^0.20.0"
+  }
+}
+```
+
+### Dependency Rules
+- **Never** add dependencies without explicit approval
+- Pin major versions for stability
+- Use `npm audit` regularly
+- Keep NestJS packages version-aligned
