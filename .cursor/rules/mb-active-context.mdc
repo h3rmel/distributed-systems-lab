@@ -6,21 +6,25 @@ globs: **/*
 # Active Context & Session State
 
 ## 1. Current Context
-- **Main Focus**: Memory Bank structure established with command-based workflow.
-- **Status**: Setup complete. Ready for development.
+- **Main Focus**: Memory Bank and command workflow finalized; ready to begin NestJS implementation.
+- **Status**: Memory Bank rules + commands committed. Ready for Phase 1 development.
 
 ## 2. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
 | 2026-01-06 | Infra | Created `mb-commands.mdc` with standardized AI commands for self-directed development. |
+| 2026-01-06 | Infra | Added new commands to `mb-commands.mdc`: `/commit` (Conventional Commits) and `/list-commands` (lean command listing). |
 | 2026-01-06 | Infra | Created Memory Bank files: `mb-product-context.mdc`, `mb-system-patterns.mdc`, `mb-tech-stack.mdc`. |
 | 2026-01-06 | Infra | Created `mb-active-context.mdc` file. |
+| 2026-01-06 | Infra | Committed Memory Bank rules and commands into git history (`docs(cursor): add Memory Bank context + command reference`). |
 
 ## 3. Next Steps (Checklist)
 - [x] Create `mb-product-context.mdc` (Business Context).
 - [x] Create `mb-system-patterns.mdc` (Technical Patterns).
 - [x] Create `mb-tech-stack.mdc` (Technology Definitions).
 - [x] Create `mb-commands.mdc` (Standardized AI Commands).
+- [x] Add `/commit` (Conventional Commits) and `/list-commands` to `mb-commands.mdc`.
+- [x] Commit Memory Bank rules and commands into git history.
 - [ ] Begin NestJS project implementation (Phase 1: Setup with Fastify).
 
 ## 4. Active Architecture Decisions
@@ -28,6 +32,7 @@ globs: **/*
 - **Format**: `.mdc` files with frontmatter for context routing.
 - **Development Approach**: Command-based workflow (not templates) to maintain hands-on learning and control.
 - **AI Role**: Assistant/guide rather than code generator. User writes code, AI provides analysis and guidance.
+- **Git Hygiene**: Use Conventional Commits via `/commit` to standardize commit messages.
 
 ## 5. Open Questions / Blockers
 - None at the moment.
