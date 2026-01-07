@@ -76,28 +76,53 @@
 - [x] Add build script: `"build": "tsc"`
 - [x] Build package: `pnpm build` (Successfully compiled ✅)
 
-### 0.4 Shared Package: @repo/database
-- [ ] Initialize package:
-  - [ ] `cd packages/database && pnpm init`
-  - [ ] Set `"name": "@repo/database"`
-- [ ] Install dependencies:
-  - [ ] `pnpm add drizzle-orm pg`
-  - [ ] `pnpm add -D drizzle-kit @types/pg`
-- [ ] Create `tsconfig.json` extending root config
-- [ ] Create `src/schema.ts`:
-  - [ ] Define `webhooksTable` using Drizzle ORM
-  - [ ] Columns: id (serial PK), provider (varchar 50), eventId (varchar 100 unique), timestamp, data (jsonb), createdAt
-- [ ] Create `src/connection.ts`:
-  - [ ] Export `createDatabaseConnection()` factory function
-  - [ ] Accept config: host, port, user, password, database
-  - [ ] Return Drizzle instance with PostgreSQL pool
-- [ ] Create `src/index.ts` (export schema and connection)
-- [ ] Create `drizzle.config.ts` for migrations
-- [ ] Generate initial migration: `pnpm drizzle-kit generate:pg`
-- [ ] Apply migration:
-  - [ ] Create migration script in package.json
-  - [ ] Run migration against Docker PostgreSQL
-  - [ ] Verify table exists: `docker compose exec postgres psql -U dev_user -d distributed_lab -c '\dt'`
+### 0.4 Shared Package: @distributed-systems-lab/database ✅
+- [x] Initialize package:
+  - [x] `cd packages/database && pnpm init`
+  - [x] Set `"name": "@distributed-systems-lab/database"` (scoped package name)
+  - [x] Set `"main": "./dist/index.js"` and `"types": "./dist/index.d.ts"`
+  - [x] Set `"private": true`
+- [x] Install dependencies:
+  - [x] Production: `pnpm add drizzle-orm postgres dotenv tslib`
+  - [x] Dev: `pnpm add -D drizzle-kit tsx @types/node`
+  - [x] Note: Using `postgres` driver (faster than `pg`), `tslib` required for importHelpers
+- [x] Create `tsconfig.json` extending root config with composite mode
+- [x] Create `drizzle.config.ts` for migrations:
+  - [x] Configure schema path, output directory, PostgreSQL dialect
+  - [x] Load environment variables from root `.env` with dotenv
+  - [x] Set database credentials from env vars with fallbacks
+- [x] Create `src/schema.ts`:
+  - [x] Define `webhookEvents` table using Drizzle ORM
+  - [x] Columns: id (serial PK), provider (varchar 255), eventId (varchar 255), timestamp (timestamptz), data (jsonb), createdAt (timestamptz with default now())
+  - [x] Indexes: provider_idx, event_id_idx, timestamp_idx for query optimization
+- [x] Create `src/client.ts`:
+  - [x] Create PostgreSQL connection with `postgres()` driver
+  - [x] Configure connection pooling (max: 10, idle_timeout: 20s, connect_timeout: 10s)
+  - [x] Export Drizzle instance with schema: `export const db = drizzle(sql, { schema })`
+  - [x] Export raw SQL client: `export const sql` for advanced queries
+- [x] Create `src/migrate.ts`:
+  - [x] Automated migration runner using `drizzle-orm/postgres-js/migrator`
+  - [x] Loads migrations from `./drizzle` folder
+  - [x] Single connection for safe concurrent deployments
+  - [x] Exit codes for CI/CD (0 success, 1 failure)
+- [x] Create `src/index.ts` (barrel export):
+  - [x] Export `db, sql` from client
+  - [x] Export `webhookEvents` schema
+  - [x] Re-export `InferSelectModel, InferInsertModel` types
+- [x] Add package.json scripts:
+  - [x] `build: "tsc"` - Compile TypeScript
+  - [x] `db:generate: "drizzle-kit generate"` - Generate SQL migrations
+  - [x] `db:migrate: "tsx src/migrate.ts"` - Run migrations
+  - [x] `db:push: "drizzle-kit push"` - Push schema directly (dev)
+  - [x] `db:studio: "drizzle-kit studio"` - Visual database browser
+- [x] Generate initial migration:
+  - [x] Run: `pnpm db:generate`
+  - [x] Created: `drizzle/0000_curly_thor.sql` with CREATE TABLE and indexes
+- [x] Apply migration:
+  - [x] Fixed: Updated `.env` with `DB_HOST=localhost` for host machine (Docker uses `postgres`)
+  - [x] Run: `pnpm db:migrate` (✅ Migrations completed successfully)
+  - [x] Verified: `docker compose exec postgres psql -U dev_user -d distributed_lab -c '\dt'` (webhook_events table exists)
+  - [x] Verified: `\d webhook_events` shows all columns, primary key, and 3 indexes
 
 ### 0.5 Shared Package: @repo/eslint-config (Optional - Can defer)
 - [ ] Initialize package: `cd packages/eslint-config && pnpm init`
