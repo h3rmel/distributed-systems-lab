@@ -124,11 +124,33 @@
   - [x] Verified: `docker compose exec postgres psql -U dev_user -d distributed_lab -c '\dt'` (webhook_events table exists)
   - [x] Verified: `\d webhook_events` shows all columns, primary key, and 3 indexes
 
-### 0.5 Shared Package: @repo/eslint-config (Optional - Can defer)
-- [ ] Initialize package: `cd packages/eslint-config && pnpm init`
-- [ ] Create `nestjs.js` - ESLint config for NestJS
-- [ ] Create `next.js` - ESLint config for Next.js  
-- [ ] Create `node.js` - ESLint config for Node.js projects
+### 0.5 Shared Package: @distributed-systems-lab/eslint-config ✅
+- [x] Initialize package:
+  - [x] `cd packages/eslint-config && pnpm init`
+  - [x] Set `"name": "@distributed-systems-lab/eslint-config"` (scoped package name)
+  - [x] Set `"type": "module"` for ESLint 9 flat config
+  - [x] Configure exports: `./base`, `./nestjs`, `./nextjs`, `./node`
+  - [x] Set peer dependencies: eslint >=9.0.0, typescript >=5.0.0
+- [x] Install dependencies:
+  - [x] `pnpm add -D typescript-eslint globals`
+- [x] Create `base.js` - Foundation config:
+  - [x] TypeScript ESLint recommended rules
+  - [x] Global ignores (dist, node_modules, .next, coverage)
+  - [x] Strict rules: no-explicit-any, no-unused-vars (except _prefix)
+  - [x] Code quality: prefer-const, no-var, eqeqeq
+- [x] Create `nestjs.js` - NestJS/backend config:
+  - [x] Extends base config
+  - [x] Allow console (pino structured logging)
+  - [x] Allow empty constructors (DI pattern)
+- [x] Create `nextjs.js` - Next.js/React config:
+  - [x] Extends base config
+  - [x] Browser + Node globals, React/JSX globals
+  - [x] React 18+ JSX transform compatible
+- [x] Create `node.js` - Node.js/streams config:
+  - [x] Extends base config
+  - [x] Enforce async patterns (require-await, no-return-await)
+  - [x] No floating promises (memory leak prevention)
+- [x] Verify all configs load correctly (✅ All output "object")
 
 ---
 
