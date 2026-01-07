@@ -2,67 +2,50 @@
 
 ## Phase 0: Foundation (Infrastructure & Shared Packages)
 
-### 0.1 Monorepo Initialization
-- [ ] Create root `package.json` with pnpm workspaces configuration
-  - [ ] Set `"type": "module"` or keep CommonJS (decide based on project needs)
-  - [ ] Add workspaces: `["apps/*", "packages/*"]`
-  - [ ] Add scripts: `dev`, `build`, `lint`, `format`
-- [ ] Create directory structure:
-  - [ ] `mkdir -p apps/ingestion-api apps/live-dashboard apps/stream-engine`
-  - [ ] `mkdir -p packages/dto packages/database packages/eslint-config`
-- [ ] Create root `tsconfig.json` (base config for all projects)
-  - [ ] Enable strict mode
-  - [ ] Set target to ES2022
-  - [ ] Configure paths for workspace packages
-- [ ] Setup Prettier configuration (`.prettierrc`)
-  - [ ] Semi: true, single quotes: true, trailing comma: all
-  - [ ] Print width: 100, tab width: 2
-- [ ] Create `.prettierignore`
-- [ ] Install root-level dev dependencies:
-  - [ ] `pnpm add -D -w typescript prettier eslint`
+### 0.1 Monorepo Initialization ✅
+- [x] Create root `package.json` with pnpm workspaces configuration
+  - [x] Kept CommonJS (default for NestJS compatibility)
+  - [x] Created `pnpm-workspace.yaml` instead of package.json workspaces field
+  - [x] Add scripts: `dev`, `build`, `lint`, `format`
+- [x] Create directory structure:
+  - [x] `mkdir -p apps/ingestion-api apps/live-dashboard apps/stream-engine`
+  - [x] `mkdir -p packages/dto packages/database packages/eslint-config`
+- [x] Create root `tsconfig.json` (base config for all projects)
+  - [x] Enable strict mode
+  - [x] Set target to ES2022
+  - [x] Configure paths for workspace packages
+- [x] Setup Prettier configuration (`.prettierrc`)
+  - [x] Semi: true, single quotes: true, trailing comma: all
+  - [x] Print width: 100, tab width: 2
+- [x] Create `.prettierignore`
+- [x] Install root-level dev dependencies:
+  - [x] `pnpm add -D -w typescript prettier eslint` (v5.9.3, v3.7.4, v9.39.2)
 
-### 0.2 Docker Compose Infrastructure
-- [ ] Create `docker-compose.yml` with 3 services:
-  - [ ] **PostgreSQL 16 Alpine:**
-    - [ ] Image: `postgres:16-alpine`
-    - [ ] Ports: `5432:5432`
-    - [ ] Environment: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
-    - [ ] Volumes: `./.docker/postgres-data:/var/lib/postgresql/data`
-    - [ ] Health check: `pg_isready -U ${POSTGRES_USER}`
-  - [ ] **Redis 7 Alpine:**
-    - [ ] Image: `redis:7-alpine`
-    - [ ] Ports: `6379:6379`
-    - [ ] Command: `redis-server --appendonly yes`
-    - [ ] Volumes: `./.docker/redis-data:/data`
-    - [ ] Health check: `redis-cli ping`
-  - [ ] **Network:** Create shared network `distributed-lab-network`
-- [ ] Create `.env.example` template:
-  ```env
-  # Database
-  DB_HOST=postgres
-  DB_PORT=5432
-  DB_USER=dev_user
-  DB_PASSWORD=dev_password
-  DB_NAME=distributed_lab
-  
-  # Redis
-  REDIS_HOST=redis
-  REDIS_PORT=6379
-  
-  # Ingestion API
-  API_PORT=3000
-  LOG_LEVEL=info
-  NODE_ENV=development
-  
-  # Dashboard
-  NEXT_PUBLIC_API_URL=http://localhost:3000
-  ```
-- [ ] Copy `.env.example` to `.env` and fill in values
-- [ ] Test infrastructure:
-  - [ ] `docker compose up -d postgres redis`
-  - [ ] Verify both services are healthy: `docker compose ps`
-  - [ ] Test PostgreSQL connection: `docker compose exec postgres psql -U dev_user -d distributed_lab -c '\l'`
-  - [ ] Test Redis connection: `docker compose exec redis redis-cli ping`
+### 0.2 Docker Compose Infrastructure ✅
+- [x] Create `docker-compose.yaml` with 2 services:
+  - [x] **PostgreSQL 16 Alpine:**
+    - [x] Image: `postgres:16-alpine`
+    - [x] Ports: `5432:5432`
+    - [x] Environment: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+    - [x] Volumes: `./.docker/postgres-data:/var/lib/postgresql/data`
+    - [x] Health check: `pg_isready -U ${POSTGRES_USER}`
+  - [x] **Redis 7 Alpine:**
+    - [x] Image: `redis:7-alpine`
+    - [x] Ports: `6379:6379`
+    - [x] Command: `redis-server --appendonly yes`
+    - [x] Volumes: `./.docker/redis-data:/data`
+    - [x] Health check: `redis-cli ping`
+  - [x] **Network:** Create shared network `distributed-lab-network`
+- [x] Create `.env.example` template with corrected ports:
+  - [x] Dashboard: 3000
+  - [x] Ingestion API: 3001
+  - [x] Stream Engine: 3002
+- [x] Copy `.env.example` to `.env` and fill in values
+- [x] Test infrastructure:
+  - [x] `docker compose up -d postgres redis`
+  - [x] Verify both services are healthy: `docker compose ps` (Both healthy ✅)
+  - [x] Test PostgreSQL connection: `docker compose exec postgres psql -U dev_user -d distributed_lab -c '\l'` (Connected ✅)
+  - [x] Test Redis connection: `docker compose exec redis redis-cli ping` (PONG ✅)
 
 ### 0.3 Shared Package: @repo/dto
 - [ ] Initialize package:
