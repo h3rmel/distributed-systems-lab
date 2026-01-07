@@ -56,23 +56,25 @@
   - [x] `docker:db` - Quick access to PostgreSQL CLI
   - [x] `docker:redis` - Quick access to Redis CLI
 
-### 0.3 Shared Package: @repo/dto
-- [ ] Initialize package:
-  - [ ] `cd packages/dto && pnpm init`
-  - [ ] Set `"name": "@repo/dto"`
-  - [ ] Set `"main": "./dist/index.js"` and `"types": "./dist/index.d.ts"`
-  - [ ] Set `"private": true`
-- [ ] Create `tsconfig.json` extending root config
-- [ ] Create `src/` directory
-- [ ] Create `src/webhook.ts`:
-  - [ ] Export `WebhookJobData` interface (provider, eventId, timestamp, data)
-  - [ ] Export `WebhookEvent` interface (database entity shape)
-  - [ ] Export `IngestResponseDto` interface (API response)
-- [ ] Create `src/socket.ts`:
-  - [ ] Export `JobCompletedEvent` interface (WebSocket event payload)
-- [ ] Create `src/index.ts` (export all types)
-- [ ] Add build script: `"build": "tsc"`
-- [ ] Build package: `pnpm build`
+### 0.3 Shared Package: @distributed-systems-lab/dto ✅
+- [x] Initialize package:
+  - [x] `cd packages/dto && pnpm init`
+  - [x] Set `"name": "@distributed-systems-lab/dto"` (scoped package name)
+  - [x] Set `"main": "./dist/index.js"` and `"types": "./dist/index.d.ts"`
+  - [x] Set `"private": true`
+- [x] Create `tsconfig.json` extending root config
+- [x] Create `src/` directory
+- [x] Create `src/webhook.ts`:
+  - [x] Export `WebhookJobData<T>` interface with generics for type safety
+  - [x] Export `WebhookEvent<T>` interface (database entity shape with generics)
+  - [x] Export `IngestResponseDto` interface (API response)
+- [x] Create `src/socket.ts`:
+  - [x] Export `JobCompletedEvent` interface (WebSocket event payload)
+  - [x] Export `SocketEvents` constants for type-safe event names
+  - [x] Export `SocketEventName` type
+- [x] Create `src/index.ts` (barrel export for clean imports)
+- [x] Add build script: `"build": "tsc"`
+- [x] Build package: `pnpm build` (Successfully compiled ✅)
 
 ### 0.4 Shared Package: @repo/database
 - [ ] Initialize package:
