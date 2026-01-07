@@ -227,9 +227,10 @@ globs:
 - **Environment Configuration:** `.env` files per project
 
 ### Cross-Project Dependencies
-- **Shared Types:** `@repo/dto` for type definitions across projects
-- **Database Module:** `@repo/database` for shared Drizzle ORM configuration
-- **Linting:** Shared ESLint configs (`@repo/eslint-config`)
+- **Shared Types:** `@distributed-systems-lab/dto` for type definitions across projects
+- **Database Module:** `@distributed-systems-lab/database` for shared Drizzle ORM configuration
+- **Linting:** `@distributed-systems-lab/eslint-config` for shared ESLint configs
+- **Logging:** `@distributed-systems-lab/logger` for consistent structured logging (pino)
 
 ### Monorepo Structure
 ```
@@ -241,7 +242,8 @@ distributed-systems-lab/
 ├── packages/
 │   ├── dto/               (Shared TypeScript types)
 │   ├── database/          (Drizzle ORM config)
-│   └── eslint-config/     (Shared linting rules)
+│   ├── eslint-config/     (Shared linting rules)
+│   └── logger/            (Shared pino logging)
 ├── specs/
 │   ├── SPEC-INGESTION-API.md
 │   ├── SPEC-DASHBOARD.md

@@ -152,6 +152,52 @@
   - [x] No floating promises (memory leak prevention)
 - [x] Verify all configs load correctly (✅ All output "object")
 
+### 0.6 Shared Package: @distributed-systems-lab/logger
+- [ ] Initialize package:
+  - [ ] `mkdir -p packages/logger/src && cd packages/logger && pnpm init`
+  - [ ] Set `"name": "@distributed-systems-lab/logger"` (scoped package name)
+  - [ ] Set `"main": "./dist/index.js"` and `"types": "./dist/index.d.ts"`
+  - [ ] Set `"private": true`
+- [ ] Install dependencies:
+  - [ ] Production: `pnpm add pino`
+  - [ ] Dev: `pnpm add -D pino-pretty @types/node`
+- [ ] Create `tsconfig.json` extending root config
+- [ ] Create `src/config.ts` - Base pino configuration:
+  - [ ] Log level from `LOG_LEVEL` env var (default: 'info')
+  - [ ] Pretty print in development (`NODE_ENV !== 'production'`)
+  - [ ] JSON output in production
+  - [ ] Timestamp with ISO format
+  - [ ] Base fields: `environment`, `version`
+- [ ] Create `src/types.ts` - Type definitions:
+  - [ ] `LogContext` interface for structured log data
+  - [ ] `ServiceLoggerOptions` interface for factory options
+- [ ] Create `src/factory.ts` - Logger factory:
+  - [ ] `createLogger(serviceName: string, options?: ServiceLoggerOptions)` function
+  - [ ] Returns configured pino instance with service context
+  - [ ] Child logger support for request-scoped logging
+- [ ] Create `src/index.ts` (barrel export):
+  - [ ] Export `createLogger` factory
+  - [ ] Export `baseLoggerConfig` for framework integrations
+  - [ ] Export types: `LogContext`, `ServiceLoggerOptions`
+- [ ] Add build script: `"build": "tsc"`
+- [ ] Build and verify package
+- [ ] Test logger output in both development and production modes
+
+**Usage in projects:**
+```typescript
+// apps/ingestion-api (NestJS with nestjs-pino)
+import { baseLoggerConfig } from '@distributed-systems-lab/logger';
+// Pass to nestjs-pino LoggerModule.forRoot()
+
+// apps/stream-engine (Fastify with pino)
+import { createLogger } from '@distributed-systems-lab/logger';
+const logger = createLogger('stream-engine');
+
+// apps/live-dashboard (Next.js server-side)
+import { createLogger } from '@distributed-systems-lab/logger';
+const logger = createLogger('live-dashboard');
+```
+
 ---
 
 ## Phase 1: Ingestion API (NestJS + Fastify + BullMQ)
