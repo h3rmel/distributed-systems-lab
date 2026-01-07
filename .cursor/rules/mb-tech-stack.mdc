@@ -1,16 +1,39 @@
 ---
-description: Technology stack, tooling, and environment configuration
+description: Technology stack, tooling, and environment configuration for all projects in the monorepo
 globs:
   - package.json
   - tsconfig.json
-  - requirements.txt
   - "*.config.js"
   - "*.config.ts"
+  - "apps/*/package.json"
+  - "packages/*/package.json"
 ---
 
 # Technology Stack & Tooling
 
-## Backend Framework
+## Monorepo Structure
+
+### Package Manager
+- **Tool:** npm workspaces or pnpm workspaces
+- **Structure:**
+  - `apps/` - Three independent applications
+  - `packages/` - Shared code (dto, database, eslint-config)
+
+### Workspace Configuration
+```json
+{
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
+```
+
+---
+
+## Project 1: Ingestion API (`apps/ingestion-api`)
+
+### Backend Framework
 
 ### NestJS 10+ (Enterprise Standard)
 - **Primary Framework:** NestJS for modular, scalable architecture
@@ -387,3 +410,473 @@ services:
 - Pin major versions for stability
 - Use `npm audit` regularly
 - Keep NestJS packages version-aligned
+
+---
+
+## Project 2: Live Dashboard (`apps/live-dashboard`)
+
+### Frontend Framework
+
+#### Next.js 14+ (App Router)
+- **Version:** 14.x or higher
+- **Router:** App Router (NOT Pages Router)
+- **Rendering:** Client-side for real-time updates
+- **Reason:** Modern React framework with built-in routing, API routes, and optimization
+
+```typescript
+// app/dashboard/page.tsx
+'use client';
+
+import { useMetricsStore } from '@/store/metrics';
+
+export default function DashboardPage() {
+  return <ThroughputChart />;
+}
+```
+
+### State Management
+
+#### Zustand (High-Frequency Updates)
+- **Package:** `zustand`
+- **Purpose:** Global state for high-frequency socket updates (avoids React Context re-render storms)
+- **Pattern:** External store accessed via hooks
+
+```typescript
+import { create } from 'zustand';
+
+interface MetricsStore {
+  events: WebhookEvent[];
+  rps: number;
+  addEvent: (event: WebhookEvent) => void;
+}
+
+export const useMetricsStore = create<MetricsStore>((set) => ({
+  events: [],
+  rps: 0,
+  addEvent: (event) => set((state) => ({
+    events: [event, ...state.events].slice(0, 100),
+  })),
+}));
+```
+
+### Real-Time Communication
+
+#### Socket.io Client
+- **Package:** `socket.io-client`
+- **Purpose:** Real-time events from ingestion-api Gateway
+- **Configuration:** Auto-reconnect with exponential backoff
+
+```typescript
+import { io } from 'socket.io-client';
+
+const socket = io(process.env.NEXT_PUBLIC_API_URL!, {
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  reconnectionAttempts: Infinity,
+});
+
+socket.on('job-completed', (event) => {
+  useMetricsStore.getState().addEvent(event);
+});
+```
+
+### Data Visualization
+
+#### Recharts or Visx
+- **Primary:** Recharts (simpler API, optimized)
+- **Alternative:** Visx (D3-based, more control)
+- **Purpose:** Line charts for RPS over time
+- **Optimization:** Throttle data updates to 30-60 FPS
+
+```typescript
+import { LineChart, Line, XAxis, YAxis } from 'recharts';
+
+export function ThroughputChart() {
+  const data = useMetricsStore(state => state.chartData);
+  
+  return (
+    <LineChart data={data}>
+      <XAxis dataKey="timestamp" />
+      <YAxis />
+      <Line type="monotone" dataKey="rps" stroke="#8884d8" />
+    </LineChart>
+  );
+}
+```
+
+### UI Components
+
+#### TailwindCSS + Shadcn/UI
+- **Styling:** TailwindCSS utility-first
+- **Components:** Shadcn/UI (copy-paste component library)
+- **Theme:** Dark mode support
+
+```typescript
+// tailwind.config.ts
+import type { Config } from 'tailwindcss';
+
+const config: Config = {
+  content: ['./app/**/*.{ts,tsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+```
+
+### Virtualization
+
+#### TanStack Virtual
+- **Package:** `@tanstack/react-virtual`
+- **Purpose:** Virtualized lists for live log stream (prevents browser freeze)
+- **Critical:** Must use for any list with 50+ rapidly updating items
+
+```typescript
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+export function LiveLogStream() {
+  const events = useMetricsStore(state => state.events);
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const virtualizer = useVirtualizer({
+    count: events.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
+  });
+  
+  return (
+    <div ref={parentRef} style={{ height: '600px', overflow: 'auto' }}>
+      {/* Render only visible items */}
+    </div>
+  );
+}
+```
+
+### TypeScript Configuration
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"],
+      "@repo/dto": ["../../packages/dto/src"]
+    }
+  }
+}
+```
+
+### Shared Dependencies
+- **Types:** Import from `@repo/dto` for type safety with backend
+- **Linting:** Extend `@repo/eslint-config/next`
+
+### Critical Dependencies
+```json
+{
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "zustand": "^4.0.0",
+    "socket.io-client": "^4.0.0",
+    "recharts": "^2.0.0",
+    "@tanstack/react-virtual": "^3.0.0",
+    "tailwindcss": "^3.0.0",
+    "@repo/dto": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.3.0",
+    "@repo/eslint-config": "workspace:*"
+  }
+}
+```
+
+---
+
+## Project 3: Stream Engine (`apps/stream-engine`)
+
+### Runtime Environment
+
+#### Node.js 20+ (Streams API)
+- **Version:** Node.js 20 LTS
+- **Core APIs:** `stream`, `stream/promises`, `fs`
+- **Purpose:** Native streaming for memory-efficient file processing
+
+### Web Framework
+
+#### Fastify (Multipart Support)
+- **Package:** `fastify`
+- **Plugin:** `@fastify/multipart` for file uploads
+- **Reason:** High-performance HTTP server with streaming support
+
+```typescript
+import Fastify from 'fastify';
+import multipart from '@fastify/multipart';
+
+const app = Fastify({ logger: true });
+
+await app.register(multipart, {
+  limits: {
+    fileSize: 5 * 1024 * 1024 * 1024, // 5GB max file size
+  },
+});
+
+app.post('/upload', async (request, reply) => {
+  const data = await request.file();
+  
+  if (!data) {
+    return reply.code(400).send({ error: 'No file uploaded' });
+  }
+  
+  // data.file is a ReadableStream
+  await processCSVStream(data.file);
+  
+  return { success: true };
+});
+```
+
+### CSV Parsing
+
+#### fast-csv or csv-parser
+- **Package:** `fast-csv` (preferred) or `csv-parser`
+- **Purpose:** Streaming CSV parsing (no memory loading)
+- **Pattern:** Transform stream in pipeline
+
+```typescript
+import { parse } from 'fast-csv';
+
+const csvStream = parse({ headers: true, objectMode: true });
+
+await pipeline(
+  fileStream,
+  csvStream,
+  validationTransform,
+  databaseStream,
+);
+```
+
+### Database Integration
+
+#### pg-copy-streams (Postgres COPY Protocol)
+- **Package:** `pg-copy-streams`
+- **Purpose:** Bulk inserts using COPY (100x faster than individual INSERTs)
+- **Pattern:** Writable stream destination
+
+```typescript
+import copyFrom from 'pg-copy-streams';
+import { pipeline } from 'stream/promises';
+
+async function bulkInsert(csvStream: NodeJS.ReadableStream) {
+  const client = await pool.connect();
+  
+  try {
+    const copyStream = client.query(
+      copyFrom.from('COPY webhooks (provider, event_id, data) FROM STDIN CSV')
+    );
+    
+    await pipeline(csvStream, formatTransform, copyStream);
+  } finally {
+    client.release();
+  }
+}
+```
+
+#### Shared Database Module
+- **Import:** Use `@repo/database` for shared Drizzle ORM configuration
+- **Connection Pool:** Shared PostgreSQL connection pool
+
+### Stream Utilities
+
+#### Core Node.js Streams
+```typescript
+import { Transform, Writable, pipeline } from 'stream';
+import { pipeline as pipelineAsync } from 'stream/promises';
+
+// Validation Transform Stream
+class ValidationTransform extends Transform {
+  constructor() {
+    super({ objectMode: true, highWaterMark: 100 });
+  }
+  
+  _transform(row: any, encoding: string, callback: Function) {
+    if (this.isValid(row)) {
+      this.push(row);
+    } else {
+      logger.warn('Invalid row skipped', row);
+    }
+    callback();
+  }
+  
+  private isValid(row: any): boolean {
+    return row.eventId && row.provider;
+  }
+}
+
+// Database Writer Stream
+class DatabaseWriter extends Writable {
+  constructor(private db: any) {
+    super({ objectMode: true, highWaterMark: 100 });
+  }
+  
+  async _write(chunk: any, encoding: string, callback: Function) {
+    try {
+      await this.db.insert(chunk);
+      callback();
+    } catch (error) {
+      callback(error);
+    }
+  }
+}
+```
+
+### Memory Monitoring
+
+#### v8 Heap Statistics
+```typescript
+import v8 from 'v8';
+
+function logMemoryUsage() {
+  const heapStats = v8.getHeapStatistics();
+  const usedMB = heapStats.used_heap_size / 1024 / 1024;
+  const totalMB = heapStats.heap_size_limit / 1024 / 1024;
+  
+  console.log(`Memory: ${usedMB.toFixed(2)}MB / ${totalMB.toFixed(2)}MB`);
+}
+
+setInterval(logMemoryUsage, 5000);
+```
+
+### Docker Configuration
+
+#### Memory-Constrained Container
+```yaml
+# docker-compose.yml
+services:
+  stream-engine:
+    build: ./apps/stream-engine
+    deploy:
+      resources:
+        limits:
+          memory: 512M  # Hard limit for OOM test
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=450  # Leave headroom
+```
+
+### TypeScript Configuration
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "paths": {
+      "@repo/database": ["../../packages/database/src"]
+    }
+  }
+}
+```
+
+### Critical Dependencies
+```json
+{
+  "dependencies": {
+    "fastify": "^4.0.0",
+    "@fastify/multipart": "^8.0.0",
+    "fast-csv": "^5.0.0",
+    "pg": "^8.0.0",
+    "pg-copy-streams": "^6.0.0",
+    "@repo/database": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}
+```
+
+### Rules for Stream Engine
+- **Forbidden:** `fs.readFileSync`, `fs.readFile` (callback or promise), loading arrays into memory
+- **Mandatory:** Use `stream.pipeline()` for all file operations
+- **Performance:** Use Postgres COPY protocol (not individual INSERTs)
+- **Memory:** Monitor heap usage, stay under 512MB
+- **Error Handling:** Catch errors at every pipeline stage
+
+---
+
+## Shared Packages
+
+### @repo/dto
+
+#### Purpose
+Shared TypeScript types and interfaces for all projects
+
+#### Structure
+```typescript
+// packages/dto/src/webhook.ts
+export interface WebhookJobData {
+  provider: string;
+  eventId: string;
+  timestamp: string;
+  data: Record<string, unknown>;
+}
+
+export interface WebhookEvent {
+  id: string;
+  provider: string;
+  eventId: string;
+  timestamp: Date;
+  data: unknown;
+  createdAt: Date;
+}
+```
+
+### @repo/database
+
+#### Purpose
+Shared Drizzle ORM configuration and connection management
+
+#### Structure
+```typescript
+// packages/database/src/schema.ts
+import { pgTable, serial, varchar, timestamp, jsonb } from 'drizzle-orm/pg-core';
+
+export const webhooksTable = pgTable('webhooks', {
+  id: serial('id').primaryKey(),
+  provider: varchar('provider', { length: 50 }).notNull(),
+  eventId: varchar('event_id', { length: 100 }).notNull().unique(),
+  timestamp: timestamp('timestamp').notNull(),
+  data: jsonb('data').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+```
+
+### @repo/eslint-config
+
+#### Purpose
+Shared ESLint configurations for consistency
+
+#### Structure
+- `nestjs.js` - ESLint config for NestJS projects
+- `next.js` - ESLint config for Next.js projects
+- `node.js` - ESLint config for Node.js projects

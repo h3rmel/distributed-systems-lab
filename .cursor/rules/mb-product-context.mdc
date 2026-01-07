@@ -1,108 +1,251 @@
 ---
-description: Business context and product objectives for the webhook ingestion system
+description: Business context and product objectives for the Distributed Systems Lab monorepo
 globs:
   - doc/**/*.md
   - README.md
+  - specs/**/*.md
 ---
 
 # Product Context & Business Objectives
 
-## Project Overview
+## Monorepo Overview
 
-**Project Name:** `webhook-ingestor-enterprise`  
+**Project Name:** `Distributed Systems Lab`  
+**Type:** Educational Monorepo for Enterprise-Grade Distributed Systems  
+**Objective:** Build three interconnected production-grade systems demonstrating mastery of high-throughput APIs, real-time dashboards, and streaming data processing.
+
+---
+
+## Project 1: Ingestion API (`ingestion-api`)
+
+### Overview
 **Type:** High-Throughput Event Ingestion System  
-**System Objective:** Engineer a fault-tolerant API gateway using Enterprise Standards (NestJS) capable of handling 10,000+ requests/second, ensuring maintainability and scalability.
+**Objective:** Engineer a fault-tolerant API gateway using NestJS capable of handling 10,000+ requests/second with enterprise-grade maintainability.
 
-## Primary KPIs
-
+### Primary KPIs
 1. **Availability:** 99.99% uptime
 2. **Architecture:** Strict Modular Architecture (Separation of Concerns)
-3. **Performance:** NestJS configured with FastifyAdapter (Not Express)
+3. **Performance:** NestJS with FastifyAdapter (NOT Express)
 4. **Throughput:** 500 Virtual Users (VUs) simultaneously
 5. **Error Rate:** HTTP Failed requests < 1% (ideally 0%)
 6. **Latency (P95):** API Response (202 Accepted) < 100ms
 
-## Business Goals
-
-### Primary Goal
-Provide a reliable, high-performance webhook ingestion system that can handle payment provider webhooks (Stripe, PayPal, etc.) at enterprise scale without data loss.
-
-### Secondary Goals
-- **Scalability:** Horizontal scaling capability via queue-based architecture
-- **Maintainability:** Clean, modular codebase following NestJS enterprise patterns
-- **Observability:** Structured JSON logging for monitoring and debugging
+### Business Goals
+- **Primary:** Provide a reliable webhook ingestion system for payment providers (Stripe, PayPal) at enterprise scale without data loss
+- **Scalability:** Horizontal scaling via queue-based architecture (BullMQ + Redis)
+- **Maintainability:** Clean, modular codebase following NestJS patterns
+- **Observability:** Structured JSON logging (nestjs-pino)
 - **Resilience:** Idempotency checks to prevent duplicate processing
 - **Data Consistency:** Zero data loss between ingestion and persistence
 
-## User Stories
+### User Stories
 
-### Story 1: Webhook Provider Integration
+#### Story 1: Webhook Provider Integration
 **As a** payment system integrator  
-**I want** to send webhooks to a single ingestion endpoint  
+**I want** to send webhooks to `/webhooks/:provider`  
 **So that** I can decouple event generation from event processing
 
 **Acceptance Criteria:**
-- Endpoint accepts POST requests at `/webhooks/:provider`
+- Endpoint accepts POST requests
 - Returns HTTP 202 Accepted immediately
-- Validates payload structure before acceptance
+- Validates payload structure using DTOs
 - Returns job ID for tracking
 
-### Story 2: Asynchronous Processing
+#### Story 2: Asynchronous Processing
 **As a** system operator  
-**I want** webhooks to be processed asynchronously  
-**So that** ingestion throughput is not bottlenecked by processing time
+**I want** webhooks processed asynchronously  
+**So that** ingestion throughput is not bottlenecked
 
 **Acceptance Criteria:**
-- Jobs are queued immediately after validation
-- Processing happens in background workers
-- Queue persistence ensures no job loss on system restart
+- Jobs queued immediately after validation
+- Background workers process jobs
+- Queue persistence ensures no job loss on restart
 - Graceful shutdown waits for job completion
 
-### Story 3: Duplicate Prevention
+#### Story 3: Duplicate Prevention
 **As a** data consistency engineer  
-**I want** duplicate webhooks to be detected and rejected  
+**I want** duplicate webhooks detected and rejected  
 **So that** the same event is never processed twice
 
 **Acceptance Criteria:**
 - Idempotency checks based on `eventId`
-- Redis-based deduplication cache with TTL (24h)
-- Duplicate webhooks return success without re-processing
-- Memory-efficient cache with automatic expiration
+- Redis-based deduplication cache with 24h TTL
+- Duplicates return success without re-processing
 
-### Story 4: System Health Monitoring
+#### Story 4: System Health Monitoring
 **As a** DevOps engineer  
 **I want** health check endpoints for Kubernetes probes  
 **So that** unhealthy pods are automatically restarted
 
 **Acceptance Criteria:**
-- `/health` endpoint returns system status
-- Checks database connectivity (PostgreSQL)
-- Checks queue connectivity (Redis)
-- Monitors memory heap usage
+- `GET /health` endpoint returns system status
+- Checks database (PostgreSQL), queue (Redis), and memory heap
 
-## System Architecture Philosophy
+### Architecture Philosophy
+- **Ingress Strategy:** Accept webhooks in < 100ms, queue for processing (zero business logic in API layer)
+- **Processing Strategy:** Workers process jobs with error handling, retries, and idempotency
+- **Data Strategy:** PostgreSQL as single source of truth; Redis for caching and queue management only
 
-### Ingress Strategy
-Accept webhooks as fast as possible (< 100ms) and queue for processing. The API layer should have zero business logic.
-
-### Processing Strategy
-Workers process jobs from the queue with proper error handling, retries, and idempotency checks.
-
-### Data Strategy
-Single source of truth in PostgreSQL. Redis is used only for caching and queue management, not as primary storage.
-
-## Success Metrics
-
-### Load Test Validation
-- **K6 Load Test:** Must pass with 500 concurrent users
-- **Total Requests Sent:** Must equal rows in PostgreSQL
+### Success Metrics
+- **K6 Load Test:** Pass with 500 concurrent users
+- **Data Consistency:** Total requests sent = rows in PostgreSQL
 - **HTTP 202 Rate:** > 99%
 - **P95 Response Time:** < 100ms
 
-### Production Readiness
-- Docker Compose setup with health checks
-- Environment-based configuration
-- Structured logging enabled
-- Rate limiting configured
-- CORS and Helmet security headers applied
+---
+
+## Project 2: Live Dashboard (`live-dashboard`)
+
+### Overview
+**Type:** Real-Time Analytics & Data Visualization  
+**Objective:** Build a high-performance dashboard visualizing ingestion throughput in real-time, rendering 50+ events/sec without UI freeze.
+
+### Primary KPIs
+1. **Rendering Performance:** Maintain 60 FPS while receiving 100+ WebSocket events/second
+2. **Latency:** < 200ms from "Job Processed" (Backend) to "Pixel on Screen" (Frontend)
+3. **Resilience:** Auto-reconnect sockets upon network failure
+
+### Business Goals
+- **Primary:** Visualize webhook ingestion throughput in real-time for operational monitoring
+- **Performance:** High-frequency state updates without React re-render storms
+- **User Experience:** Responsive UI even under extreme load (500 VUs on backend)
+- **Observability:** Live metrics showing RPS, event logs, and system health
+
+### User Stories
+
+#### Story 1: Real-Time Throughput Visualization
+**As a** system operator  
+**I want** to see live RPS (Requests Per Second) chart  
+**So that** I can monitor ingestion performance in real-time
+
+**Acceptance Criteria:**
+- Line chart showing RPS over time
+- Updates throttled to 30-60 FPS max
+- Chart does not freeze under high load
+
+#### Story 2: Live Event Stream
+**As a** developer  
+**I want** to see the last 100 webhook events in real-time  
+**So that** I can debug issues as they happen
+
+**Acceptance Criteria:**
+- Virtualized list (TanStack Virtual) showing last 100 events
+- Auto-scroll to latest event
+- Does not crash browser under load
+
+#### Story 3: Socket Reconnection
+**As a** DevOps engineer  
+**I want** the dashboard to auto-reconnect on network failure  
+**So that** I don't lose monitoring during transient failures
+
+**Acceptance Criteria:**
+- Auto-reconnect with exponential backoff
+- Visual indicator of connection state
+- Chart recovers data upon reconnection
+
+### Architecture Philosophy
+- **State Management:** Zustand for high-frequency updates outside React Context
+- **Rendering Optimization:** Throttle UI updates to prevent re-render storms
+- **Communication:** Socket.io for real-time events from backend
+
+### Success Metrics (The "Freeze" Test)
+- Chrome DevTools shows CPU usage < 70% during 500 VU load test
+- UI remains responsive (buttons click immediately) while chart updates
+- Dashboard recovers immediately when backend restarts
+
+---
+
+## Project 3: Stream Engine (`stream-engine`)
+
+### Overview
+**Type:** Low-Level Node.js Data Processing  
+**Objective:** Process massive CSV datasets (2GB+) in a container with 512MB RAM, demonstrating mastery of Node.js Streams, Backpressure, and Garbage Collection.
+
+### Primary KPIs
+1. **Memory Safety:** Process memory (RSS) must never exceed 512MB regardless of file size
+2. **Throughput:** Process > 10,000 rows/second
+3. **Backpressure:** System must pause file reading if database write stream becomes slow
+
+### Business Goals
+- **Primary:** Demonstrate production-grade streaming data processing with constrained resources
+- **Memory Efficiency:** Process multi-GB files without loading into memory
+- **Performance:** Use Postgres COPY protocol for bulk inserts (not individual INSERTs)
+- **Reliability:** Handle errors at any pipeline stage without crashing
+
+### User Stories
+
+#### Story 1: Large File Processing
+**As a** data engineer  
+**I want** to upload 2GB+ CSV files via HTTP  
+**So that** I can bulk import data without memory issues
+
+**Acceptance Criteria:**
+- Accept multipart file upload via Fastify
+- Stream directly to database (no temp files)
+- Memory usage stays flat (100-200MB)
+- Return 200 only after all rows persisted
+
+#### Story 2: Data Validation During Stream
+**As a** data quality engineer  
+**I want** invalid rows rejected during streaming  
+**So that** bad data never enters the database
+
+**Acceptance Criteria:**
+- Transform stream validates each row
+- Invalid rows logged but not inserted
+- Process continues despite invalid rows
+
+#### Story 3: Backpressure Handling
+**As a** system architect  
+**I want** file reading paused when database is slow  
+**So that** memory does not grow unbounded
+
+**Acceptance Criteria:**
+- Pipeline respects backpressure signals
+- Memory usage remains constant under slow DB writes
+- No "Unhandled Promise Rejection" errors
+
+### Architecture Philosophy
+- **Streaming-First:** ALL operations must use `.pipe()` or `stream.pipeline()`
+- **Zero Memory Loading:** FORBID `fs.readFileSync` or loading full arrays into memory
+- **ETL Pipeline:** Source → CSV Parser → Validation Transform → Postgres COPY Stream
+- **Error Handling:** Catch errors at every stage to prevent process crashes
+
+### Success Metrics (The OOM Test)
+- Generate 5M row CSV (~1GB), send via `curl`
+- Container RAM usage stays flat (100-200MB oscillation)
+- Completion returns HTTP 200
+- `SELECT COUNT(*)` matches CSV row count
+
+---
+
+## Shared Infrastructure
+
+### Common Services (Docker Compose)
+- **PostgreSQL 16 (Alpine):** Shared database for all projects
+- **Redis 7 (Alpine):** Queue management and caching
+- **Environment Configuration:** `.env` files per project
+
+### Cross-Project Dependencies
+- **Shared Types:** `@repo/dto` for type definitions across projects
+- **Database Module:** `@repo/database` for shared Drizzle ORM configuration
+- **Linting:** Shared ESLint configs (`@repo/eslint-config`)
+
+### Monorepo Structure
+```
+distributed-systems-lab/
+├── apps/
+│   ├── ingestion-api/     (NestJS + Fastify + BullMQ)
+│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io)
+│   └── stream-engine/     (Node.js Streams + Fastify)
+├── packages/
+│   ├── dto/               (Shared TypeScript types)
+│   ├── database/          (Drizzle ORM config)
+│   └── eslint-config/     (Shared linting rules)
+├── specs/
+│   ├── SPEC-INGESTION-API.md
+│   ├── SPEC-DASHBOARD.md
+│   └── SPEC-STREAMS.MD
+└── docker-compose.yml
+```
 

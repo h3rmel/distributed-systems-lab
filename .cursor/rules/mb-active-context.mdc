@@ -6,33 +6,153 @@ globs: **/*
 # Active Context & Session State
 
 ## 1. Current Context
-- **Main Focus**: Memory Bank and command workflow finalized; ready to begin NestJS implementation.
-- **Status**: Memory Bank rules + commands committed. Ready for Phase 1 development.
+- **Project Type**: Monorepo - "Distributed Systems Lab"
+- **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
+- **Status**: Specifications defined. Memory Bank updated to reflect monorepo architecture. Ready for implementation.
 
-## 2. Recent Changes
+## 2. Monorepo Structure
+
+### Project Architecture
+```
+distributed-systems-lab/
+├── apps/
+│   ├── ingestion-api/     (NestJS + Fastify + BullMQ)
+│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io)
+│   └── stream-engine/     (Node.js Streams + Fastify)
+├── packages/
+│   ├── dto/               (Shared TypeScript types)
+│   ├── database/          (Drizzle ORM config)
+│   └── eslint-config/     (Shared linting rules)
+├── specs/
+│   ├── SPEC-INGESTION-API.md  (Source of Truth for Project 1)
+│   ├── SPEC-DASHBOARD.md      (Source of Truth for Project 2)
+│   └── SPEC-STREAMS.MD        (Source of Truth for Project 3)
+├── .cursor/rules/
+│   ├── mb-active-context.mdc
+│   ├── mb-commands.mdc
+│   ├── mb-product-context.mdc
+│   ├── mb-system-patterns.mdc
+│   └── mb-tech-stack.mdc
+└── docker-compose.yml
+```
+
+### Source of Truth Hierarchy
+1. **Specifications** (`specs/SPEC-*.md`) - Business requirements and acceptance criteria
+2. **Memory Bank** (`.cursor/rules/mb-*.mdc`) - Technical patterns and current state
+3. **Code Implementation** - Must align with both specs and Memory Bank
+
+## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-01-07 | Infra | Updated Memory Bank files to reflect monorepo architecture with 3 projects. |
+| 2026-01-07 | Infra | Restructured `mb-product-context.mdc` to cover all 3 projects (Ingestion API, Dashboard, Stream Engine). |
+| 2026-01-07 | Infra | Expanded `mb-system-patterns.mdc` with Next.js performance patterns and Node.js Streams patterns. |
+| 2026-01-07 | Infra | Updated `mb-tech-stack.mdc` with tech stacks for all 3 projects plus shared packages. |
 | 2026-01-06 | Infra | Created `mb-commands.mdc` with standardized AI commands for self-directed development. |
-| 2026-01-06 | Infra | Added new commands to `mb-commands.mdc`: `/commit` (Conventional Commits) and `/list-commands` (lean command listing). |
-| 2026-01-06 | Infra | Created Memory Bank files: `mb-product-context.mdc`, `mb-system-patterns.mdc`, `mb-tech-stack.mdc`. |
-| 2026-01-06 | Infra | Created `mb-active-context.mdc` file. |
-| 2026-01-06 | Infra | Committed Memory Bank rules and commands into git history (`docs(cursor): add Memory Bank context + command reference`). |
+| 2026-01-06 | Infra | Created initial Memory Bank files for single-project structure. |
+| 2026-01-06 | Infra | Committed Memory Bank rules and commands into git history. |
 
-## 3. Next Steps (Checklist)
-- [x] Create `mb-product-context.mdc` (Business Context).
-- [x] Create `mb-system-patterns.mdc` (Technical Patterns).
-- [x] Create `mb-tech-stack.mdc` (Technology Definitions).
-- [x] Create `mb-commands.mdc` (Standardized AI Commands).
-- [x] Add `/commit` (Conventional Commits) and `/list-commands` to `mb-commands.mdc`.
-- [x] Commit Memory Bank rules and commands into git history.
-- [ ] Begin NestJS project implementation (Phase 1: Setup with Fastify).
+## 4. Project Status
 
-## 4. Active Architecture Decisions
-- **Memory Bank**: Migrated from root `/memory` folder to native `.cursor/rules` system.
-- **Format**: `.mdc` files with frontmatter for context routing.
-- **Development Approach**: Command-based workflow (not templates) to maintain hands-on learning and control.
-- **AI Role**: Assistant/guide rather than code generator. User writes code, AI provides analysis and guidance.
-- **Git Hygiene**: Use Conventional Commits via `/commit` to standardize commit messages.
+### Project 1: Ingestion API (`apps/ingestion-api`)
+- **Status**: Not started
+- **Tech Stack**: NestJS 10+ + FastifyAdapter + BullMQ + PostgreSQL + Drizzle ORM
+- **Key Features**: Webhook ingestion, async processing, idempotency checks, health monitoring
+- **Target KPIs**: 500 VUs, < 100ms P95, < 1% error rate
+- **Next Phase**: Phase 1 - Setup NestJS with Fastify
 
-## 5. Open Questions / Blockers
-- None at the moment.
+### Project 2: Live Dashboard (`apps/live-dashboard`)
+- **Status**: Not started
+- **Tech Stack**: Next.js 14 (App Router) + Zustand + Socket.io + Recharts + TailwindCSS
+- **Key Features**: Real-time RPS chart, live event stream, socket reconnection
+- **Target KPIs**: 60 FPS with 100+ events/sec, < 200ms latency, < 70% CPU
+- **Dependencies**: Requires Project 1 WebSocket gateway
+
+### Project 3: Stream Engine (`apps/stream-engine`)
+- **Status**: Not started
+- **Tech Stack**: Node.js 20 Streams + Fastify + pg-copy-streams
+- **Key Features**: Memory-efficient CSV processing, backpressure handling, bulk inserts
+- **Target KPIs**: Process 2GB+ files in 512MB RAM, > 10k rows/sec
+- **Dependencies**: Requires shared database module
+
+### Shared Packages
+- **@repo/dto**: Not created - Shared TypeScript types
+- **@repo/database**: Not created - Drizzle ORM configuration
+- **@repo/eslint-config**: Not created - Shared ESLint configs
+
+## 5. Next Steps (Checklist)
+
+### Infrastructure Setup
+- [ ] Initialize monorepo structure (npm workspaces or pnpm)
+- [ ] Create `docker-compose.yml` (PostgreSQL 16 + Redis 7)
+- [ ] Setup shared packages (`@repo/dto`, `@repo/database`, `@repo/eslint-config`)
+
+### Project 1: Ingestion API
+- [ ] Phase 1: Setup NestJS with FastifyAdapter + nestjs-pino
+- [ ] Phase 2: Configure DatabaseModule with Drizzle ORM
+- [ ] Phase 3: Setup BullMQ queue configuration
+- [ ] Phase 4: Implement WebhookController + DTO validation
+- [ ] Phase 5: Implement WebhookProcessor with idempotency
+- [ ] Phase 6: Add HealthModule with Terminus
+- [ ] Phase 7: K6 load testing (500 VUs acceptance test)
+
+### Project 2: Live Dashboard
+- [ ] Phase 1: Initialize Next.js 14 with App Router
+- [ ] Phase 2: Setup Zustand store for metrics
+- [ ] Phase 3: Implement Socket.io client with reconnection
+- [ ] Phase 4: Create ThroughputChart with throttled updates
+- [ ] Phase 5: Implement LiveLogStream with TanStack Virtual
+- [ ] Phase 6: Performance testing (Freeze Test)
+
+### Project 3: Stream Engine
+- [ ] Phase 1: Setup Fastify with multipart support
+- [ ] Phase 2: Implement streaming CSV parser
+- [ ] Phase 3: Create validation Transform stream
+- [ ] Phase 4: Implement Postgres COPY stream destination
+- [ ] Phase 5: Add memory monitoring
+- [ ] Phase 6: OOM testing (5M rows in 512MB)
+
+## 6. Active Architecture Decisions
+
+### Monorepo Strategy
+- **Structure**: Apps + Packages pattern (not Turborepo, just workspaces)
+- **Package Manager**: To be decided (npm workspaces vs pnpm)
+- **Shared Code**: Types, database config, and linting rules in `packages/`
+
+### Development Workflow
+- **Memory Bank**: Native `.cursor/rules` system with `.mdc` files
+- **Command-Based**: Use `/summarize`, `/investigate`, `/plan`, etc. for structured AI interactions
+- **AI Role**: Assistant/guide, not code generator. User writes code with AI analysis.
+- **Git Hygiene**: Conventional Commits via `/commit` command
+
+### Project Interconnections
+- **Ingestion API → Dashboard**: WebSocket events for real-time metrics
+- **Ingestion API ↔ Stream Engine**: Shared PostgreSQL database via `@repo/database`
+- **All Projects**: Import shared types from `@repo/dto`
+
+### Infrastructure
+- **Database**: Single shared PostgreSQL 16 instance for all projects
+- **Queue**: Redis 7 for BullMQ (ingestion-api only)
+- **Docker Compose**: All services with health checks and resource limits
+
+### Testing Strategy
+- **Ingestion API**: K6 load testing (500 VUs, P95 < 100ms)
+- **Dashboard**: Browser performance monitoring (CPU < 70%, 60 FPS)
+- **Stream Engine**: OOM testing (2GB file in 512MB container)
+
+## 7. Critical Constraints
+
+### Performance Requirements
+- **Ingestion API**: Must use FastifyAdapter (NOT ExpressAdapter)
+- **Dashboard**: Must throttle UI updates to avoid re-render storms
+- **Stream Engine**: Must use `stream.pipeline()` (FORBID `fs.readFileSync`)
+
+### Code Quality Standards
+- **TypeScript**: Strict mode enabled, zero `any` types
+- **SOLID Principles**: Mandatory across all projects
+- **Error Handling**: Result Pattern for business logic, try/catch at boundaries
+- **Documentation**: JSDoc on all public functions/classes
+- **Logging**: Structured JSON logs (pino for backend)
+
+## 8. Open Questions / Blockers
+- None at the moment. Ready to begin implementation.

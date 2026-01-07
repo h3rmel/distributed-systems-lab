@@ -1,14 +1,15 @@
 ---
-description: Engineering patterns, SOLID principles, and code quality standards
+description: Engineering patterns, SOLID principles, and code quality standards for all projects in the monorepo
 globs:
   - "**/*.ts"
   - "**/*.tsx"
-  - "**/*.py"
+  - "**/*.js"
+  - "**/*.jsx"
 ---
 
 # System Patterns & Engineering Standards
 
-## Core Architectural Principles
+## Universal Principles (All Projects)
 
 ### 1. SOLID Principles (Mandatory)
 
@@ -337,4 +338,340 @@ this.logger.info(`Webhook from ${provider} enqueued with job ${jobId}`);
 - **warn:** Expected failures, validation errors, rate limits
 - **info:** Business events (job enqueued, job completed)
 - **debug:** Development debugging (disabled in production)
+
+---
+
+## Project-Specific Patterns
+
+### 9. Next.js Dashboard Patterns (`live-dashboard`)
+
+#### React Performance Optimization
+
+**CRITICAL:** Do not use `useEffect` for high-frequency socket listeners.
+
+```typescript
+// ✅ GOOD: Zustand store for high-frequency updates
+import { create } from 'zustand';
+
+interface MetricsStore {
+  events: WebhookEvent[];
+  rps: number;
+  addEvent: (event: WebhookEvent) => void;
+}
+
+export const useMetricsStore = create<MetricsStore>((set) => ({
+  events: [],
+  rps: 0,
+  addEvent: (event) => set((state) => ({
+    events: [event, ...state.events].slice(0, 100), // Keep last 100
+  })),
+}));
+
+// Socket listener OUTSIDE React component
+socket.on('job-completed', (event) => {
+  useMetricsStore.getState().addEvent(event);
+});
+
+// ❌ BAD: useEffect creates re-render storms
+function Dashboard() {
+  const [events, setEvents] = useState([]);
+  
+  useEffect(() => {
+    socket.on('job-completed', (event) => {
+      setEvents(prev => [...prev, event]); // Re-renders on EVERY event
+    });
+  }, []);
+}
+```
+
+#### Throttled UI Updates
+
+```typescript
+// ✅ GOOD: Throttle chart updates to 30-60 FPS
+import { useEffect, useState } from 'react';
+import { useMetricsStore } from './store';
+
+export function ThroughputChart() {
+  const [chartData, setChartData] = useState([]);
+  
+  useEffect(() => {
+    // Update UI at most 30 times per second
+    const interval = setInterval(() => {
+      const latestMetrics = useMetricsStore.getState().calculateRPS();
+      setChartData(latestMetrics);
+    }, 1000 / 30); // 30 FPS
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return <LineChart data={chartData} />;
+}
+
+// ❌ BAD: Direct subscription causes re-render on every event
+export function ThroughputChart() {
+  const events = useMetricsStore(state => state.events); // Re-renders 100+ times/sec
+  return <LineChart data={events} />;
+}
+```
+
+#### Virtualized Lists (Mandatory for Live Logs)
+
+```typescript
+// ✅ GOOD: Use TanStack Virtual for large lists
+import { useVirtualizer } from '@tanstack/react-virtual';
+
+export function LiveLogStream() {
+  const events = useMetricsStore(state => state.events);
+  const parentRef = useRef<HTMLDivElement>(null);
+  
+  const virtualizer = useVirtualizer({
+    count: events.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50, // Row height
+  });
+  
+  return (
+    <div ref={parentRef} style={{ height: '600px', overflow: 'auto' }}>
+      <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
+        {virtualizer.getVirtualItems().map(virtualRow => (
+          <div key={virtualRow.key} style={{ height: `${virtualRow.size}px` }}>
+            {events[virtualRow.index].eventId}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ❌ BAD: Standard <ul> will freeze browser with 100+ rapid updates
+export function LiveLogStream() {
+  const events = useMetricsStore(state => state.events);
+  return (
+    <ul>
+      {events.map(event => <li key={event.id}>{event.eventId}</li>)}
+    </ul>
+  );
+}
+```
+
+#### Socket Connection Management
+
+```typescript
+// ✅ GOOD: Global singleton with reconnection logic
+import { io, Socket } from 'socket.io-client';
+
+class SocketManager {
+  private socket: Socket | null = null;
+  
+  connect() {
+    if (this.socket?.connected) return this.socket;
+    
+    this.socket = io(process.env.NEXT_PUBLIC_API_URL!, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: Infinity,
+    });
+    
+    this.socket.on('connect', () => {
+      console.log('Socket connected');
+    });
+    
+    this.socket.on('disconnect', () => {
+      console.log('Socket disconnected, will auto-reconnect');
+    });
+    
+    return this.socket;
+  }
+  
+  disconnect() {
+    this.socket?.disconnect();
+    this.socket = null;
+  }
+}
+
+export const socketManager = new SocketManager();
+```
+
+#### Rules for Dashboard
+- Use Zustand for high-frequency state updates (not React Context)
+- Throttle UI updates to 30-60 FPS max
+- Use virtualized lists for any list > 50 items
+- Implement socket reconnection with exponential backoff
+- Import types from `@repo/dto` for type safety with backend
+
+---
+
+### 10. Node.js Streams Patterns (`stream-engine`)
+
+#### Streaming Pipeline (Mandatory)
+
+**CRITICAL:** FORBID `fs.readFileSync`, `readFile`, or loading entire arrays into memory.
+
+```typescript
+// ✅ GOOD: Streaming pipeline with backpressure
+import { pipeline } from 'stream/promises';
+import { createReadStream } from 'fs';
+import csvParser from 'csv-parser';
+import { Transform } from 'stream';
+
+async function processCSV(filePath: string) {
+  const validationTransform = new Transform({
+    objectMode: true,
+    transform(row, encoding, callback) {
+      // Validate row
+      if (isValidRow(row)) {
+        this.push(formatForPostgres(row));
+        callback();
+      } else {
+        // Skip invalid row, log it
+        logger.warn('Invalid row', row);
+        callback();
+      }
+    }
+  });
+  
+  await pipeline(
+    createReadStream(filePath),
+    csvParser(),
+    validationTransform,
+    postgresWriteStream, // Use pg-copy-streams
+  );
+}
+
+// ❌ BAD: Loading entire file into memory
+async function processCSVBad(filePath: string) {
+  const content = fs.readFileSync(filePath, 'utf-8'); // OOM on 2GB file
+  const rows = content.split('\n');
+  for (const row of rows) {
+    await db.insert(row); // Also slow: N individual queries
+  }
+}
+```
+
+#### Backpressure Handling
+
+```typescript
+// ✅ GOOD: Respect backpressure signals
+import { Writable } from 'stream';
+
+class DatabaseWriter extends Writable {
+  constructor(private db: PostgresConnection) {
+    super({ objectMode: true, highWaterMark: 100 });
+  }
+  
+  async _write(chunk: any, encoding: string, callback: Function) {
+    try {
+      await this.db.insert(chunk);
+      callback(); // Signal ready for next chunk
+    } catch (error) {
+      callback(error); // Propagate error, stop pipeline
+    }
+  }
+}
+
+// Pipeline automatically pauses source when writer is slow
+await pipeline(
+  sourceStream,
+  transformStream,
+  new DatabaseWriter(db),
+);
+```
+
+#### Postgres COPY Protocol (High Performance)
+
+```typescript
+// ✅ GOOD: Use COPY for bulk inserts
+import copyFrom from 'pg-copy-streams';
+import { pipeline } from 'stream/promises';
+import { Transform } from 'stream';
+
+async function bulkInsert(csvStream: NodeJS.ReadableStream) {
+  const client = await pool.connect();
+  
+  try {
+    const copyStream = client.query(
+      copyFrom.from('COPY webhooks (provider, event_id, data) FROM STDIN CSV')
+    );
+    
+    // Transform objects to CSV format
+    const formatter = new Transform({
+      objectMode: true,
+      transform(obj, encoding, callback) {
+        const csvLine = `${obj.provider},${obj.eventId},"${JSON.stringify(obj.data)}"\n`;
+        callback(null, csvLine);
+      }
+    });
+    
+    await pipeline(csvStream, formatter, copyStream);
+  } finally {
+    client.release();
+  }
+}
+
+// ❌ BAD: Individual INSERTs (100x slower)
+async function bulkInsertBad(rows: any[]) {
+  for (const row of rows) {
+    await db.insert(webhooksTable).values(row); // Slow
+  }
+}
+```
+
+#### Memory-Constrained Environment
+
+```typescript
+// Docker Compose configuration for stream-engine
+// deploy:
+//   resources:
+//     limits:
+//       memory: 512M  # Hard limit
+
+// ✅ GOOD: Monitor memory usage
+import v8 from 'v8';
+
+setInterval(() => {
+  const heapStats = v8.getHeapStatistics();
+  const usedMB = heapStats.used_heap_size / 1024 / 1024;
+  
+  if (usedMB > 400) {
+    logger.warn('High memory usage', { usedMB });
+  }
+}, 5000);
+```
+
+#### Error Handling in Pipelines
+
+```typescript
+// ✅ GOOD: Catch errors at every stage
+import { pipeline } from 'stream/promises';
+
+try {
+  await pipeline(
+    sourceStream,
+    transform1,
+    transform2,
+    destinationStream,
+  );
+  console.log('Pipeline completed successfully');
+} catch (error) {
+  // Pipeline automatically destroys all streams on error
+  logger.error('Pipeline failed', error);
+  throw error; // Propagate to caller
+}
+
+// ❌ BAD: Unhandled stream errors crash Node process
+sourceStream
+  .pipe(transform1)
+  .pipe(transform2)
+  .pipe(destinationStream);
+// If any stream emits 'error' event without listener, process crashes
+```
+
+#### Rules for Stream Engine
+- ALL file operations must use streams (no `fs.readFileSync`)
+- Use `stream.pipeline()` for automatic cleanup and backpressure
+- Use Postgres COPY protocol (not individual INSERTs)
+- Monitor memory usage in 512MB container
+- Handle errors at every pipeline stage
+- Never load entire CSV into memory
 
