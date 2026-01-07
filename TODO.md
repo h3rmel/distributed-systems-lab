@@ -46,6 +46,15 @@
   - [x] Verify both services are healthy: `docker compose ps` (Both healthy ✅)
   - [x] Test PostgreSQL connection: `docker compose exec postgres psql -U dev_user -d distributed_lab -c '\l'` (Connected ✅)
   - [x] Test Redis connection: `docker compose exec redis redis-cli ping` (PONG ✅)
+- [x] Add Docker management scripts to root `package.json`:
+  - [x] `docker:up` - Start all services in detached mode
+  - [x] `docker:down` - Stop and remove all containers
+  - [x] `docker:logs` - View logs from all services (follow mode)
+  - [x] `docker:ps` - Show status of all services
+  - [x] `docker:restart` - Restart all services
+  - [x] `docker:clean` - Full cleanup (remove volumes and orphan containers)
+  - [x] `docker:db` - Quick access to PostgreSQL CLI
+  - [x] `docker:redis` - Quick access to Redis CLI
 
 ### 0.3 Shared Package: @repo/dto
 - [ ] Initialize package:
