@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: Specifications defined. Memory Bank updated to reflect monorepo architecture. Ready for implementation.
+- **Status**: **Phase 0 Complete.** Foundation infrastructure and shared packages ready. Ready for Phase 1 (Ingestion API).
 
 ## 2. Monorepo Structure
 
@@ -16,13 +16,13 @@ globs: **/*
 ```
 distributed-systems-lab/
 ├── apps/
-│   ├── ingestion-api/     (NestJS + Fastify + BullMQ)
-│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io)
-│   └── stream-engine/     (Node.js Streams + Fastify)
+│   ├── ingestion-api/     (NestJS + Fastify + BullMQ) - NOT STARTED
+│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io) - NOT STARTED
+│   └── stream-engine/     (Node.js Streams + Fastify) - NOT STARTED
 ├── packages/
-│   ├── dto/               (Shared TypeScript types)
-│   ├── database/          (Drizzle ORM config)
-│   └── eslint-config/     (Shared linting rules)
+│   ├── dto/               ✅ @distributed-systems-lab/dto
+│   ├── database/          ✅ @distributed-systems-lab/database
+│   └── eslint-config/     ✅ @distributed-systems-lab/eslint-config
 ├── specs/
 │   ├── SPEC-INGESTION-API.md  (Source of Truth for Project 1)
 │   ├── SPEC-DASHBOARD.md      (Source of Truth for Project 2)
@@ -33,33 +33,48 @@ distributed-systems-lab/
 │   ├── mb-product-context.mdc
 │   ├── mb-system-patterns.mdc
 │   └── mb-tech-stack.mdc
-└── docker-compose.yml
+├── docker-compose.yaml    ✅ PostgreSQL 16 + Redis 7
+├── package.json           ✅ pnpm workspaces monorepo
+├── pnpm-workspace.yaml    ✅ Workspace config
+├── tsconfig.json          ✅ Base TypeScript config (strict)
+├── .prettierrc            ✅ Code formatting
+└── TODO.md                📋 Implementation roadmap
 ```
 
 ### Source of Truth Hierarchy
 1. **Specifications** (`specs/SPEC-*.md`) - Business requirements and acceptance criteria
 2. **Memory Bank** (`.cursor/rules/mb-*.mdc`) - Technical patterns and current state
-3. **Code Implementation** - Must align with both specs and Memory Bank
+3. **TODO.md** - Detailed implementation roadmap with checklists
+4. **Code Implementation** - Must align with specs, Memory Bank, and TODO
 
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
-| 2026-01-07 | Infra | Updated Memory Bank files to reflect monorepo architecture with 3 projects. |
-| 2026-01-07 | Infra | Restructured `mb-product-context.mdc` to cover all 3 projects (Ingestion API, Dashboard, Stream Engine). |
-| 2026-01-07 | Infra | Expanded `mb-system-patterns.mdc` with Next.js performance patterns and Node.js Streams patterns. |
-| 2026-01-07 | Infra | Updated `mb-tech-stack.mdc` with tech stacks for all 3 projects plus shared packages. |
-| 2026-01-06 | Infra | Created `mb-commands.mdc` with standardized AI commands for self-directed development. |
-| 2026-01-06 | Infra | Created initial Memory Bank files for single-project structure. |
-| 2026-01-06 | Infra | Committed Memory Bank rules and commands into git history. |
+| 2026-01-07 | Package | Created `@distributed-systems-lab/eslint-config` - ESLint 9 flat configs for NestJS, Next.js, Node.js |
+| 2026-01-07 | Package | Created `@distributed-systems-lab/database` - Drizzle ORM with webhook_events schema and migrations |
+| 2026-01-07 | Package | Created `@distributed-systems-lab/dto` - Shared types (WebhookJobData, WebhookEvent, SocketEvents) |
+| 2026-01-07 | Infra | Configured Docker Compose with PostgreSQL 16 + Redis 7 (health checks, volumes, network) |
+| 2026-01-07 | Infra | Initialized pnpm workspaces monorepo with root tsconfig.json and Prettier |
+| 2026-01-07 | Infra | Updated Memory Bank files to reflect monorepo architecture with 3 projects |
+| 2026-01-06 | Infra | Created `mb-commands.mdc` with standardized AI commands for self-directed development |
 
 ## 4. Project Status
 
+### Phase 0: Foundation ✅ COMPLETE
+- [x] Monorepo initialized (pnpm workspaces)
+- [x] Docker Compose (PostgreSQL 16 + Redis 7)
+- [x] Root TypeScript config (strict mode)
+- [x] Prettier configuration
+- [x] `@distributed-systems-lab/dto` package
+- [x] `@distributed-systems-lab/database` package (with migrations applied)
+- [x] `@distributed-systems-lab/eslint-config` package
+
 ### Project 1: Ingestion API (`apps/ingestion-api`)
-- **Status**: Not started
+- **Status**: Not started - **NEXT UP**
 - **Tech Stack**: NestJS 10+ + FastifyAdapter + BullMQ + PostgreSQL + Drizzle ORM
 - **Key Features**: Webhook ingestion, async processing, idempotency checks, health monitoring
 - **Target KPIs**: 500 VUs, < 100ms P95, < 1% error rate
-- **Next Phase**: Phase 1 - Setup NestJS with Fastify
+- **Current Phase**: Phase 1.1 - Initialize NestJS with Fastify
 
 ### Project 2: Live Dashboard (`apps/live-dashboard`)
 - **Status**: Not started
@@ -75,65 +90,75 @@ distributed-systems-lab/
 - **Target KPIs**: Process 2GB+ files in 512MB RAM, > 10k rows/sec
 - **Dependencies**: Requires shared database module
 
-### Shared Packages
-- **@repo/dto**: Not created - Shared TypeScript types
-- **@repo/database**: Not created - Drizzle ORM configuration
-- **@repo/eslint-config**: Not created - Shared ESLint configs
+### Shared Packages ✅ ALL COMPLETE
+| Package | Status | Description |
+|---------|--------|-------------|
+| `@distributed-systems-lab/dto` | ✅ | WebhookJobData<T>, WebhookEvent<T>, SocketEvents, IngestResponseDto |
+| `@distributed-systems-lab/database` | ✅ | Drizzle ORM, webhookEvents schema, connection pool, migrations |
+| `@distributed-systems-lab/eslint-config` | ✅ | ESLint 9 flat configs: base, nestjs, nextjs, node |
 
 ## 5. Next Steps (Checklist)
 
-### Infrastructure Setup
-- [ ] Initialize monorepo structure (npm workspaces or pnpm)
-- [ ] Create `docker-compose.yml` (PostgreSQL 16 + Redis 7)
-- [ ] Setup shared packages (`@repo/dto`, `@repo/database`, `@repo/eslint-config`)
+### Phase 1: Ingestion API (Current Focus)
+- [ ] Phase 1.1: Initialize NestJS with FastifyAdapter + nestjs-pino
+- [ ] Phase 1.2: Configure DatabaseModule with Drizzle ORM
+- [ ] Phase 1.3: Setup BullMQ queue configuration
+- [ ] Phase 1.4: Implement WebhookController + DTO validation
+- [ ] Phase 1.5: Implement WebhookProcessor with idempotency
+- [ ] Phase 1.6: Add HealthModule with Terminus
+- [ ] Phase 1.7: Add WebSocket Gateway for dashboard
+- [ ] Phase 1.8: Security & Rate Limiting
+- [ ] Phase 1.9: K6 load testing (500 VUs acceptance test)
 
-### Project 1: Ingestion API
-- [ ] Phase 1: Setup NestJS with FastifyAdapter + nestjs-pino
-- [ ] Phase 2: Configure DatabaseModule with Drizzle ORM
-- [ ] Phase 3: Setup BullMQ queue configuration
-- [ ] Phase 4: Implement WebhookController + DTO validation
-- [ ] Phase 5: Implement WebhookProcessor with idempotency
-- [ ] Phase 6: Add HealthModule with Terminus
-- [ ] Phase 7: K6 load testing (500 VUs acceptance test)
+### Phase 2: Live Dashboard (After Ingestion API)
+- [ ] Initialize Next.js 14 with App Router
+- [ ] Setup Zustand store for metrics
+- [ ] Implement Socket.io client with reconnection
+- [ ] Create ThroughputChart with throttled updates
+- [ ] Implement LiveLogStream with TanStack Virtual
+- [ ] Performance testing (Freeze Test)
 
-### Project 2: Live Dashboard
-- [ ] Phase 1: Initialize Next.js 14 with App Router
-- [ ] Phase 2: Setup Zustand store for metrics
-- [ ] Phase 3: Implement Socket.io client with reconnection
-- [ ] Phase 4: Create ThroughputChart with throttled updates
-- [ ] Phase 5: Implement LiveLogStream with TanStack Virtual
-- [ ] Phase 6: Performance testing (Freeze Test)
-
-### Project 3: Stream Engine
-- [ ] Phase 1: Setup Fastify with multipart support
-- [ ] Phase 2: Implement streaming CSV parser
-- [ ] Phase 3: Create validation Transform stream
-- [ ] Phase 4: Implement Postgres COPY stream destination
-- [ ] Phase 5: Add memory monitoring
-- [ ] Phase 6: OOM testing (5M rows in 512MB)
+### Phase 3: Stream Engine (After Dashboard)
+- [ ] Setup Fastify with multipart support
+- [ ] Implement streaming CSV parser
+- [ ] Create validation Transform stream
+- [ ] Implement Postgres COPY stream destination
+- [ ] Add memory monitoring
+- [ ] OOM testing (5M rows in 512MB)
 
 ## 6. Active Architecture Decisions
 
-### Monorepo Strategy
-- **Structure**: Apps + Packages pattern (not Turborepo, just workspaces)
-- **Package Manager**: To be decided (npm workspaces vs pnpm)
-- **Shared Code**: Types, database config, and linting rules in `packages/`
+### Monorepo Strategy (Decided)
+- **Package Manager**: pnpm (v10.23.0) with workspaces
+- **Structure**: `apps/*` for applications, `packages/*` for shared code
+- **Shared Code**: Types (dto), database (Drizzle), linting (ESLint configs)
 
 ### Development Workflow
 - **Memory Bank**: Native `.cursor/rules` system with `.mdc` files
-- **Command-Based**: Use `/summarize`, `/investigate`, `/plan`, etc. for structured AI interactions
-- **AI Role**: Assistant/guide, not code generator. User writes code with AI analysis.
+- **Command-Based**: Use `/guide`, `/summarize`, `/commit`, etc. for structured AI interactions
+- **AI Role**: Assistant/guide - user writes code, AI provides guidance
 - **Git Hygiene**: Conventional Commits via `/commit` command
+- **Roadmap**: `TODO.md` contains detailed implementation checklist
 
 ### Project Interconnections
-- **Ingestion API → Dashboard**: WebSocket events for real-time metrics
-- **Ingestion API ↔ Stream Engine**: Shared PostgreSQL database via `@repo/database`
-- **All Projects**: Import shared types from `@repo/dto`
+- **Ingestion API → Dashboard**: WebSocket events for real-time metrics (job-completed)
+- **Ingestion API ↔ Stream Engine**: Shared PostgreSQL database via `@distributed-systems-lab/database`
+- **All Projects**: Import shared types from `@distributed-systems-lab/dto`
 
-### Infrastructure
-- **Database**: Single shared PostgreSQL 16 instance for all projects
-- **Queue**: Redis 7 for BullMQ (ingestion-api only)
-- **Docker Compose**: All services with health checks and resource limits
+### Infrastructure (Configured)
+- **Database**: PostgreSQL 16 Alpine at `localhost:5432` (Docker)
+- **Queue**: Redis 7 Alpine at `localhost:6379` (Docker)
+- **Network**: `distributed-lab-network` (Docker bridge)
+- **Data Persistence**: `.docker/postgres-data`, `.docker/redis-data`
+
+### Port Assignments
+| Service | Port |
+|---------|------|
+| Live Dashboard | 3000 |
+| Ingestion API | 3001 |
+| Stream Engine | 3002 |
+| PostgreSQL | 5432 |
+| Redis | 6379 |
 
 ### Testing Strategy
 - **Ingestion API**: K6 load testing (500 VUs, P95 < 100ms)
@@ -153,6 +178,36 @@ distributed-systems-lab/
 - **Error Handling**: Result Pattern for business logic, try/catch at boundaries
 - **Documentation**: JSDoc on all public functions/classes
 - **Logging**: Structured JSON logs (pino for backend)
+- **Linting**: Use `@distributed-systems-lab/eslint-config/*` presets
 
-## 8. Open Questions / Blockers
-- None at the moment. Ready to begin implementation.
+## 8. Environment Configuration
+
+### Local Development (.env)
+```env
+# Database (use localhost for local dev, postgres for Docker-to-Docker)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=dev_user
+DB_PASSWORD=dev_password
+DB_NAME=distributed_lab
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# App Ports
+API_PORT=3001
+DASHBOARD_PORT=3000
+STREAM_ENGINE_PORT=3002
+```
+
+### Docker Scripts (package.json)
+- `pnpm docker:up` - Start PostgreSQL + Redis
+- `pnpm docker:down` - Stop containers
+- `pnpm docker:logs` - View logs
+- `pnpm docker:db` - PostgreSQL CLI
+- `pnpm docker:redis` - Redis CLI
+- `pnpm docker:clean` - Remove volumes + orphans
+
+## 9. Open Questions / Blockers
+- None. Ready to begin Phase 1 (Ingestion API).
