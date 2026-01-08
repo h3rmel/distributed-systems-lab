@@ -197,43 +197,45 @@ const logger = createLogger('live-dashboard');
 
 ## Phase 1: Ingestion API (NestJS + Fastify + BullMQ)
 
-### 1.1 Project Setup
-- [ ] Initialize NestJS project:
-  - [ ] `cd apps/ingestion-api`
-  - [ ] `npx @nestjs/cli new . --skip-git --package-manager pnpm`
-- [ ] **CRITICAL:** Replace ExpressAdapter with FastifyAdapter
-  - [ ] Install: `pnpm add @nestjs/platform-fastify`
-  - [ ] Update `src/main.ts`:
-    - [ ] Import `FastifyAdapter` and `NestFastifyApplication`
-    - [ ] Use `NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter())`
-    - [ ] Change `listen(3000, '0.0.0.0')` for Docker compatibility
-- [ ] Install core dependencies:
-  - [ ] `pnpm add @nestjs/config @nestjs/bullmq bullmq`
-  - [ ] `pnpm add nestjs-pino pino-http pino-pretty`
-  - [ ] `pnpm add class-validator class-transformer`
-  - [ ] `pnpm add ioredis` (Redis client)
-  - [ ] `pnpm add @repo/dto @repo/database` (workspace packages)
-- [ ] Setup environment configuration:
-  - [ ] Create `.env` (copy from root if needed)
-  - [ ] Import `ConfigModule.forRoot({ isGlobal: true })` in AppModule
+### 1.1 Project Setup ✅
+- [x] Initialize NestJS project:
+  - [x] `cd apps/ingestion-api`
+  - [x] `npx @nestjs/cli new . --skip-git --package-manager pnpm`
+- [x] **CRITICAL:** Replace ExpressAdapter with FastifyAdapter
+  - [x] Install: `pnpm add @nestjs/platform-fastify`
+  - [x] Update `src/main.ts`:
+    - [x] Import `FastifyAdapter` and `NestFastifyApplication`
+    - [x] Use `NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter())`
+    - [x] Change `listen(3001, '0.0.0.0')` for Docker compatibility
+- [x] Install core dependencies:
+  - [x] `pnpm add @nestjs/config @nestjs/bullmq bullmq`
+  - [x] `pnpm add nestjs-pino pino-http pino-pretty`
+  - [x] `pnpm add class-validator class-transformer`
+  - [x] `pnpm add ioredis` (Redis client)
+  - [x] `pnpm add @distributed-systems-lab/dto @distributed-systems-lab/database` (workspace packages)
+- [x] Setup environment configuration:
+  - [x] Create `.env` with DB and Redis config
+  - [x] Import `ConfigModule.forRoot({ isGlobal: true })` in AppModule
 
-### 1.2 Logging Setup (nestjs-pino)
-- [ ] Import `LoggerModule.forRoot()` in AppModule
-- [ ] Configure pino options:
-  - [ ] Set log level from environment
-  - [ ] Use `pino-pretty` transport in development
-  - [ ] JSON logs in production
-- [ ] Test: Start app with `pnpm start:dev`, verify Fastify logs (NOT Express)
+### 1.2 Logging Setup (nestjs-pino) ✅
+- [x] Import `LoggerModule.forRootAsync()` in AppModule
+- [x] Configure pino options:
+  - [x] Set log level from environment
+  - [x] Use `pino-pretty` transport in development
+  - [x] JSON logs in production
+- [x] Test: Start app with `pnpm start:dev`, verify Fastify logs (NOT Express)
+- [x] Use `app.useLogger(app.get(Logger))` in main.ts
 
-### 1.3 Database Module
-- [ ] Create `src/database/database.module.ts`
-- [ ] Create provider:
-  - [ ] Token: `'DATABASE_CONNECTION'`
-  - [ ] Factory: Use `createDatabaseConnection` from `@repo/database`
-  - [ ] Inject: `ConfigService` for DB credentials
-- [ ] Export `'DATABASE_CONNECTION'` provider
-- [ ] Import `DatabaseModule` as global in AppModule
-- [ ] Test: Inject connection in AppService, log successful connection
+### 1.3 Database Module ✅
+- [x] Create `src/database/database.module.ts`
+- [x] Create provider:
+  - [x] Token: `'DATABASE_CONNECTION'`
+  - [x] Factory: Create Drizzle ORM instance with `postgres` driver
+  - [x] Inject: `ConfigService` for DB credentials via `getOrThrow<string>()`
+- [x] Export `'DATABASE_CONNECTION'` provider
+- [x] Import `DatabaseModule` as global in AppModule
+- [x] Test: Inject connection in AppService, verified with `SELECT 1` query
+- [x] Added `drizzle-orm` and `postgres` as direct dependencies
 
 ### 1.4 BullMQ Queue Configuration
 - [ ] Import `BullModule.forRootAsync()` in AppModule:
@@ -724,5 +726,5 @@ const logger = createLogger('live-dashboard');
 
 ---
 
-**Last Updated:** 2026-01-07
-**Status:** Ready for implementation 🚀
+**Last Updated:** 2026-01-08
+**Status:** Phase 1 in progress - Ingestion API setup complete, next: BullMQ 🚧
