@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database';
 import { BullModule } from '@nestjs/bullmq';
 import { WebhookModule } from './webhook';
+import { WorkerModule } from './worker';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { WebhookModule } from './webhook';
     }),
 
     WebhookModule,
+    WorkerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

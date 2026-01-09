@@ -1,11 +1,17 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle, PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { webhookEvents } from '@distributed-systems-lab/database';
 
-//Injection token for the Drizzle database instance
+/** Injection token for the Drizzle database instance */
 export const DATABASE_CONNECTION = 'DATABASE_CONNECTION';
+
+/** Schema definition for type inference */
+const schema = { webhookEvents };
+
+/** Type-safe database instance type for dependency injection */
+export type DatabaseConnection = PostgresJsDatabase<typeof schema>;
 
 @Global()
 @Module({
@@ -22,7 +28,7 @@ export const DATABASE_CONNECTION = 'DATABASE_CONNECTION';
           connect_timeout: 10,
         });
 
-        return drizzle(client, { schema: { webhookEvents } });
+        return drizzle(client, { schema });
       },
     },
   ],
