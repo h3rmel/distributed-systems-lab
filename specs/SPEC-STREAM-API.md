@@ -1,9 +1,9 @@
-# Stream Engine's Spec
+# Stream API Spec
 
 ## 1. Project Manifesto & Goals
 
-**Project Name:** `stream-engine` (Apps Layer)
-**Type:** Low-Level Node.js Data Processing
+**Project Name:** `stream-api` (Apps Layer)
+**Type:** Batch Data Ingestion API
 **Objective:** Process massive CSV datasets (2GB+) inside a container with restricted RAM (512MB), demonstrating mastery of Node.js Streams, Backpressure, and Garbage Collection.
 
 **Primary KPIs:**
@@ -19,7 +19,7 @@
 - **Runtime:** Node.js 20+ (Streams API).
 - **Framework:** Fastify (Multipart support).
 - **Parsing:** `csv-parser` or `fast-csv` (Streaming parser).
-- **Database:** PostgreSQL (Connection via `@repo/database`).
+- **Database:** PostgreSQL (Connection via `@distributed-systems-lab/database`).
 - **Optimization:** `pg-copy-streams` (Use Postgres COPY protocol, not standard INSERTs).
 
 **AI Agent Directive:** strictly FORBID usage of `fs.readFileSync` or loading the whole array into memory. All operations must be piped (`.pipe()`) or use `stream.pipeline()`.
@@ -45,7 +45,7 @@ graph LR
 **Role:** Orchestrator.
 **Logic:**
 
-1. Initializa `pipeline(source, transform, destination, callback)`.
+1. Initialize `pipeline(source, transform, destination, callback)`.
 2. Handle `error` events at any stage to prevent "Unhandled Promise Rejection" which crashes Node process.
 
 ### Module B: The Transform Layers
@@ -53,8 +53,8 @@ graph LR
 **Role:** ETL (Extract, Transform, Load).
 **Components:**
 
-1. **Sanitization Transform:** A `Transform` stream that cleans emails, formats dates and drop invalid rows.
-2. **NDJSON/CSV Formatter:** Converts the object back to the format expected by Postgres `COPY`command.
+1. **Sanitization Transform:** A `Transform` stream that cleans emails, formats dates and drops invalid rows.
+2. **NDJSON/CSV Formatter:** Converts the object back to the format expected by Postgres `COPY` command.
 
 ### Module C: Infrastructure (Constraints)
 
@@ -72,6 +72,6 @@ graph LR
 
 ### Pass Condition:
 
-1. **Memory:** Container RAM usage stays flat (e.g., oscilating between 100MB~200MB) and does NOT grow linearly.
+1. **Memory:** Container RAM usage stays flat (e.g., oscillating between 100MB~200MB) and does NOT grow linearly.
 2. **Completion:** Returns HTTP 200 only after all rows are in DB.
 3. **Database:** `SELECT COUNT(*)` matches the CSV row count.

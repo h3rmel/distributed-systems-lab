@@ -155,10 +155,10 @@ globs:
 
 ---
 
-## Project 3: Stream Engine (`stream-engine`)
+## Project 3: Stream API (`stream-api`)
 
 ### Overview
-**Type:** Low-Level Node.js Data Processing  
+**Type:** Batch Data Ingestion API  
 **Objective:** Process massive CSV datasets (2GB+) in a container with 512MB RAM, demonstrating mastery of Node.js Streams, Backpressure, and Garbage Collection.
 
 ### Primary KPIs
@@ -230,24 +230,22 @@ globs:
 - **Shared Types:** `@distributed-systems-lab/dto` for type definitions across projects
 - **Database Module:** `@distributed-systems-lab/database` for shared Drizzle ORM configuration
 - **Linting:** `@distributed-systems-lab/eslint-config` for shared ESLint configs
-- **Logging:** `@distributed-systems-lab/logger` for consistent structured logging (pino)
 
 ### Monorepo Structure
 ```
 distributed-systems-lab/
 ├── apps/
-│   ├── ingestion-api/     (NestJS + Fastify + BullMQ)
-│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io)
-│   └── stream-engine/     (Node.js Streams + Fastify)
+│   ├── ingestion-api/     (NestJS + Fastify + BullMQ) - Unit ingestion via webhooks
+│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io) - Real-time visualization
+│   └── stream-api/        (Node.js Streams + Fastify) - Batch ingestion via CSV
 ├── packages/
 │   ├── dto/               (Shared TypeScript types)
 │   ├── database/          (Drizzle ORM config)
-│   ├── eslint-config/     (Shared linting rules)
-│   └── logger/            (Shared pino logging)
+│   └── eslint-config/     (Shared linting rules)
 ├── specs/
 │   ├── SPEC-INGESTION-API.md
 │   ├── SPEC-DASHBOARD.md
-│   └── SPEC-STREAMS.MD
-└── docker-compose.yml
+│   └── SPEC-STREAM-API.md
+└── docker-compose.yaml
 ```
 

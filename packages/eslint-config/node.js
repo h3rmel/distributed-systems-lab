@@ -2,7 +2,7 @@ import baseConfig from './base.js';
 import globals from 'globals';
 
 /**
- * ESLint configuration for Node.js projects (apps/stream-engine)
+ * ESLint configuration for Node.js projects (apps/stream-api)
  * Extends base config with Node.js-specific rules for stream processing
  */
 export default [

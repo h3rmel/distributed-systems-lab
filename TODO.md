@@ -8,7 +8,7 @@
   - [x] Created `pnpm-workspace.yaml` instead of package.json workspaces field
   - [x] Add scripts: `dev`, `build`, `lint`, `format`
 - [x] Create directory structure:
-  - [x] `mkdir -p apps/ingestion-api apps/live-dashboard apps/stream-engine`
+  - [x] `mkdir -p apps/ingestion-api apps/live-dashboard apps/stream-api`
   - [x] `mkdir -p packages/dto packages/database packages/eslint-config`
 - [x] Create root `tsconfig.json` (base config for all projects)
   - [x] Enable strict mode
@@ -39,7 +39,7 @@
 - [x] Create `.env.example` template with corrected ports:
   - [x] Dashboard: 3000
   - [x] Ingestion API: 3001
-  - [x] Stream Engine: 3002
+  - [x] Stream API: 3002
 - [x] Copy `.env.example` to `.env` and fill in values
 - [x] Test infrastructure:
   - [x] `docker compose up -d postgres redis`
@@ -152,8 +152,10 @@
   - [x] No floating promises (memory leak prevention)
 - [x] Verify all configs load correctly (✅ All output "object")
 
-### 0.6 Shared Package: @distributed-systems-lab/logger ✅
-- [x] Initialize package:
+### 0.6 Shared Package: @distributed-systems-lab/logger ❌ DELETED
+> **Note:** This package was created but later deleted (2026-01-09). NestJS uses `nestjs-pino` directly, and Stream API will configure pino inline when built. Keeping this section for historical reference.
+
+- [x] ~~Initialize package:~~
   - [x] `mkdir -p packages/logger/src && cd packages/logger && pnpm init`
   - [x] Set `"name": "@distributed-systems-lab/logger"` (scoped package name)
   - [x] Set `"main": "./dist/index.js"` and `"types": "./dist/index.d.ts"`
@@ -184,9 +186,9 @@
 import { baseLoggerConfig } from '@distributed-systems-lab/logger';
 // Pass to nestjs-pino LoggerModule.forRoot()
 
-// apps/stream-engine (Fastify with pino)
+// apps/stream-api (Fastify with pino)
 import { createLogger } from '@distributed-systems-lab/logger';
-const logger = createLogger('stream-engine');
+const logger = createLogger('stream-api');
 
 // apps/live-dashboard (Next.js server-side)
 import { createLogger } from '@distributed-systems-lab/logger';
@@ -459,11 +461,11 @@ const logger = createLogger('live-dashboard');
 
 ---
 
-## Phase 3: Stream Engine (Node.js Streams + Fastify)
+## Phase 3: Stream API (Node.js Streams + Fastify)
 
 ### 3.1 Project Setup
 - [ ] Initialize project:
-  - [ ] `cd apps/stream-engine`
+  - [ ] `cd apps/stream-api`
   - [ ] `pnpm init`
   - [ ] Set `"type": "module"` for ESM support
 - [ ] Install dependencies:
@@ -562,8 +564,8 @@ const logger = createLogger('live-dashboard');
 - [ ] Call `startMemoryMonitoring()` in `src/server.ts` after server starts
 
 ### 3.9 Docker Configuration (512MB Memory Limit)
-- [ ] Add stream-engine service to `docker-compose.yml`:
-  - [ ] Build from `./apps/stream-engine`
+- [ ] Add stream-api service to `docker-compose.yml`:
+  - [ ] Build from `./apps/stream-api`
   - [ ] Port: `3001:3001`
   - [ ] Depends on: postgres
   - [ ] Environment: Database connection from `.env`
@@ -575,8 +577,8 @@ const logger = createLogger('live-dashboard');
           memory: 512M
     ```
   - [ ] Environment: `NODE_OPTIONS=--max-old-space-size=450` (leave headroom)
-- [ ] Create `Dockerfile` in `apps/stream-engine/`
-- [ ] Test: `docker compose up stream-engine`
+- [ ] Create `Dockerfile` in `apps/stream-api/`
+- [ ] Test: `docker compose up stream-api`
 
 ### 3.10 Load Testing (OOM Test)
 - [ ] Generate test CSV file:
@@ -586,7 +588,7 @@ const logger = createLogger('live-dashboard');
 - [ ] Upload via curl:
   - [ ] `curl -F "file=@large.csv" http://localhost:3001/upload`
 - [ ] Monitor during upload:
-  - [ ] Terminal 1: `docker stats stream-engine` (watch memory usage)
+  - [ ] Terminal 1: `docker stats stream-api` (watch memory usage)
   - [ ] Terminal 2: Watch application logs (memory monitoring output)
 - [ ] Verify acceptance criteria:
   - [ ] Memory stays flat (100-200MB oscillation, NOT linear growth)
@@ -611,7 +613,7 @@ const logger = createLogger('live-dashboard');
   - [ ] Start all services: `docker compose up -d`
   - [ ] Send webhooks via Ingestion API
   - [ ] Verify Dashboard shows real-time updates
-  - [ ] Upload CSV via Stream Engine
+  - [ ] Upload CSV via Stream API
   - [ ] Verify all data in PostgreSQL
 - [ ] Test failure scenarios:
   - [ ] Stop PostgreSQL, verify health checks fail
@@ -628,7 +630,7 @@ const logger = createLogger('live-dashboard');
 - [ ] Create per-project READMEs:
   - [ ] `apps/ingestion-api/README.md` - API endpoints, modules, testing
   - [ ] `apps/live-dashboard/README.md` - Components, performance patterns
-  - [ ] `apps/stream-engine/README.md` - Streaming architecture, memory constraints
+  - [ ] `apps/stream-api/README.md` - Streaming architecture, memory constraints
 - [ ] Document shared packages:
   - [ ] `packages/dto/README.md` - Type definitions
   - [ ] `packages/database/README.md` - Schema, migrations
@@ -641,7 +643,7 @@ const logger = createLogger('live-dashboard');
   - [ ] `"test": "pnpm --recursive test"`
   - [ ] `"clean": "pnpm --recursive --parallel exec rm -rf dist node_modules"`
 - [ ] Create `scripts/` directory:
-  - [ ] `generate-csv.js` - Generate test CSV files for Stream Engine
+  - [ ] `generate-csv.js` - Generate test CSV files for Stream API
   - [ ] `seed-database.js` - Seed database with test data
   - [ ] `reset-dev.sh` - Reset development environment (drop DB, clear Redis)
 
@@ -649,7 +651,7 @@ const logger = createLogger('live-dashboard');
 - [ ] Run all acceptance tests:
   - [ ] Ingestion API: K6 load test (500 VUs)
   - [ ] Dashboard: Freeze test (CPU < 70%)
-  - [ ] Stream Engine: OOM test (1GB file in 512MB container)
+  - [ ] Stream API: OOM test (1GB file in 512MB container)
 - [ ] Document results in `BENCHMARKS.md`
 - [ ] Record metrics: P95 latency, throughput, memory usage
 

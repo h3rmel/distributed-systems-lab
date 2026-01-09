@@ -608,7 +608,7 @@ export function LiveLogStream() {
 
 ---
 
-## Project 3: Stream Engine (`apps/stream-engine`)
+## Project 3: Stream API (`apps/stream-api`)
 
 ### Runtime Environment
 
@@ -767,8 +767,8 @@ setInterval(logMemoryUsage, 5000);
 ```yaml
 # docker-compose.yml
 services:
-  stream-engine:
-    build: ./apps/stream-engine
+  stream-api:
+    build: ./apps/stream-api
     deploy:
       resources:
         limits:
@@ -815,7 +815,7 @@ services:
 }
 ```
 
-### Rules for Stream Engine
+### Rules for Stream API
 - **Forbidden:** `fs.readFileSync`, `fs.readFile` (callback or promise), loading arrays into memory
 - **Mandatory:** Use `stream.pipeline()` for all file operations
 - **Performance:** Use Postgres COPY protocol (not individual INSERTs)

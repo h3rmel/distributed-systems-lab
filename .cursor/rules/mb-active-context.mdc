@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 IN PROGRESS.** Ingestion API: Project setup, logging, and database complete. Next: BullMQ queue configuration.
+- **Status**: **Phase 1 IN PROGRESS.** Ingestion API: Phases 1.1-1.5 complete. Next: Phase 1.6 HealthModule.
 
 ## 2. Monorepo Structure
 
@@ -18,16 +18,15 @@ distributed-systems-lab/
 ├── apps/
 │   ├── ingestion-api/     (NestJS + Fastify + BullMQ) - 🚧 IN PROGRESS
 │   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io) - NOT STARTED
-│   └── stream-engine/     (Node.js Streams + Fastify) - NOT STARTED
+│   └── stream-api/        (Node.js Streams + Fastify) - NOT STARTED
 ├── packages/
 │   ├── dto/               ✅ @distributed-systems-lab/dto
 │   ├── database/          ✅ @distributed-systems-lab/database
-│   ├── eslint-config/     ✅ @distributed-systems-lab/eslint-config
-│   └── logger/            ✅ @distributed-systems-lab/logger
+│   └── eslint-config/     ✅ @distributed-systems-lab/eslint-config
 ├── specs/
 │   ├── SPEC-INGESTION-API.md  (Source of Truth for Project 1)
 │   ├── SPEC-DASHBOARD.md      (Source of Truth for Project 2)
-│   └── SPEC-STREAMS.MD        (Source of Truth for Project 3)
+│   └── SPEC-STREAM-API.md     (Source of Truth for Project 3)
 ├── .cursor/rules/
 │   ├── mb-active-context.mdc
 │   ├── mb-commands.mdc
@@ -42,6 +41,13 @@ distributed-systems-lab/
 └── TODO.md                📋 Implementation roadmap
 ```
 
+### Project Naming Convention
+| Internal Name | Description |
+|---------------|-------------|
+| `ingestion-api` | Webhook Data Ingestion API (unit ingestion) |
+| `stream-api` | Batch Processing API (bulk ingestion via CSV) |
+| `live-dashboard` | Real-time Dashboard |
+
 ### Source of Truth Hierarchy
 1. **Specifications** (`specs/SPEC-*.md`) - Business requirements and acceptance criteria
 2. **Memory Bank** (`.cursor/rules/mb-*.mdc`) - Technical patterns and current state
@@ -51,16 +57,16 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
-| 2026-01-08 | App | Created `DatabaseModule` with Drizzle ORM connection pooling, verified with test query |
+| 2026-01-09 | Refactor | Renamed `stream-engine` → `stream-api` for consistency |
+| 2026-01-09 | Cleanup | Deleted `@distributed-systems-lab/logger` package (unused, NestJS uses nestjs-pino) |
+| 2026-01-09 | App | Added demo script for webhook ingestion with idempotency |
+| 2026-01-09 | App | Implemented `WorkerModule` with `WebhookProcessor` and `IdempotencyService` |
+| 2026-01-09 | App | Added `DatabaseConnection` type export for strict typing |
+| 2026-01-09 | App | Implemented `WebhookModule` with controller, service, and DTO validation |
+| 2026-01-09 | App | Added `QueueModule` with BullMQ configuration and default job options |
+| 2026-01-08 | App | Created `DatabaseModule` with Drizzle ORM connection pooling |
 | 2026-01-08 | App | Configured `nestjs-pino` structured logging with pino-pretty in dev mode |
 | 2026-01-08 | App | Initialized `apps/ingestion-api` with NestJS 11 + FastifyAdapter (port 3001) |
-| 2026-01-07 | Package | Created `@distributed-systems-lab/logger` - Pino logger factory with dev/prod configs |
-| 2026-01-07 | Package | Created `@distributed-systems-lab/eslint-config` - ESLint 9 flat configs for NestJS, Next.js, Node.js |
-| 2026-01-07 | Package | Created `@distributed-systems-lab/database` - Drizzle ORM with webhook_events schema and migrations |
-| 2026-01-07 | Package | Created `@distributed-systems-lab/dto` - Shared types (WebhookJobData, WebhookEvent, SocketEvents) |
-| 2026-01-07 | Infra | Configured Docker Compose with PostgreSQL 16 + Redis 7 (health checks, volumes, network) |
-| 2026-01-07 | Infra | Initialized pnpm workspaces monorepo with root tsconfig.json and Prettier |
-| 2026-01-06 | Infra | Created `mb-commands.mdc` with standardized AI commands for self-directed development |
 
 ## 4. Project Status
 
@@ -72,15 +78,20 @@ distributed-systems-lab/
 - [x] `@distributed-systems-lab/dto` package
 - [x] `@distributed-systems-lab/database` package (with migrations applied)
 - [x] `@distributed-systems-lab/eslint-config` package
-- [x] `@distributed-systems-lab/logger` package
 
 ### Project 1: Ingestion API (`apps/ingestion-api`)
-- **Status**: **IN PROGRESS** - Phase 1.4 BullMQ Queue Configuration
+- **Status**: **IN PROGRESS** - Phase 1.6 HealthModule with Terminus
 - **Tech Stack**: NestJS 11 + FastifyAdapter + BullMQ + PostgreSQL + Drizzle ORM
 - **Key Features**: Webhook ingestion, async processing, idempotency checks, health monitoring
 - **Target KPIs**: 500 VUs, < 100ms P95, < 1% error rate
-- **Completed**: Project setup, FastifyAdapter, nestjs-pino logging, DatabaseModule with Drizzle
-- **Current Phase**: Phase 1.4 - Setup BullMQ queue configuration
+- **Completed**: 
+  - Project setup with FastifyAdapter
+  - nestjs-pino structured logging
+  - DatabaseModule with Drizzle ORM
+  - QueueModule with BullMQ
+  - WebhookModule (controller + service + DTO)
+  - WorkerModule (processor + idempotency)
+- **Current Phase**: Phase 1.6 - Add HealthModule with Terminus
 
 ### Project 2: Live Dashboard (`apps/live-dashboard`)
 - **Status**: Not started
@@ -89,7 +100,7 @@ distributed-systems-lab/
 - **Target KPIs**: 60 FPS with 100+ events/sec, < 200ms latency, < 70% CPU
 - **Dependencies**: Requires Project 1 WebSocket gateway
 
-### Project 3: Stream Engine (`apps/stream-engine`)
+### Project 3: Stream API (`apps/stream-api`)
 - **Status**: Not started
 - **Tech Stack**: Node.js 20 Streams + Fastify + pg-copy-streams
 - **Key Features**: Memory-efficient CSV processing, backpressure handling, bulk inserts
@@ -102,17 +113,16 @@ distributed-systems-lab/
 | `@distributed-systems-lab/dto` | ✅ | WebhookJobData<T>, WebhookEvent<T>, SocketEvents, IngestResponseDto |
 | `@distributed-systems-lab/database` | ✅ | Drizzle ORM, webhookEvents schema, connection pool, migrations |
 | `@distributed-systems-lab/eslint-config` | ✅ | ESLint 9 flat configs: base, nestjs, nextjs, node |
-| `@distributed-systems-lab/logger` | ✅ | Shared pino logger with service context, dev/prod modes |
 
 ## 5. Next Steps (Checklist)
 
 ### Phase 1: Ingestion API (Current Focus)
 - [x] Phase 1.1: Initialize NestJS with FastifyAdapter + nestjs-pino
 - [x] Phase 1.2: Configure DatabaseModule with Drizzle ORM
-- [ ] Phase 1.3: Setup BullMQ queue configuration ← **NEXT**
-- [ ] Phase 1.4: Implement WebhookController + DTO validation
-- [ ] Phase 1.5: Implement WebhookProcessor with idempotency
-- [ ] Phase 1.6: Add HealthModule with Terminus
+- [x] Phase 1.3: Setup BullMQ queue configuration
+- [x] Phase 1.4: Implement WebhookController + DTO validation
+- [x] Phase 1.5: Implement WebhookProcessor with idempotency
+- [ ] Phase 1.6: Add HealthModule with Terminus ← **NEXT**
 - [ ] Phase 1.7: Add WebSocket Gateway for dashboard
 - [ ] Phase 1.8: Security & Rate Limiting
 - [ ] Phase 1.9: K6 load testing (500 VUs acceptance test)
@@ -125,7 +135,7 @@ distributed-systems-lab/
 - [ ] Implement LiveLogStream with TanStack Virtual
 - [ ] Performance testing (Freeze Test)
 
-### Phase 3: Stream Engine (After Dashboard)
+### Phase 3: Stream API (After Dashboard)
 - [ ] Setup Fastify with multipart support
 - [ ] Implement streaming CSV parser
 - [ ] Create validation Transform stream
@@ -149,7 +159,7 @@ distributed-systems-lab/
 
 ### Project Interconnections
 - **Ingestion API → Dashboard**: WebSocket events for real-time metrics (job-completed)
-- **Ingestion API ↔ Stream Engine**: Shared PostgreSQL database via `@distributed-systems-lab/database`
+- **Ingestion API ↔ Stream API**: Shared PostgreSQL database via `@distributed-systems-lab/database`
 - **All Projects**: Import shared types from `@distributed-systems-lab/dto`
 
 ### Infrastructure (Configured)
@@ -163,28 +173,28 @@ distributed-systems-lab/
 |---------|------|
 | Live Dashboard | 3000 |
 | Ingestion API | 3001 |
-| Stream Engine | 3002 |
+| Stream API | 3002 |
 | PostgreSQL | 5432 |
 | Redis | 6379 |
 
 ### Testing Strategy
 - **Ingestion API**: K6 load testing (500 VUs, P95 < 100ms)
 - **Dashboard**: Browser performance monitoring (CPU < 70%, 60 FPS)
-- **Stream Engine**: OOM testing (2GB file in 512MB container)
+- **Stream API**: OOM testing (2GB file in 512MB container)
 
 ## 7. Critical Constraints
 
 ### Performance Requirements
 - **Ingestion API**: Must use FastifyAdapter (NOT ExpressAdapter)
 - **Dashboard**: Must throttle UI updates to avoid re-render storms
-- **Stream Engine**: Must use `stream.pipeline()` (FORBID `fs.readFileSync`)
+- **Stream API**: Must use `stream.pipeline()` (FORBID `fs.readFileSync`)
 
 ### Code Quality Standards
 - **TypeScript**: Strict mode enabled, zero `any` types
 - **SOLID Principles**: Mandatory across all projects
 - **Error Handling**: Result Pattern for business logic, try/catch at boundaries
 - **Documentation**: JSDoc on all public functions/classes
-- **Logging**: Structured JSON logs (pino for backend)
+- **Logging**: Structured JSON logs (nestjs-pino for NestJS, pino for standalone)
 - **Linting**: Use `@distributed-systems-lab/eslint-config/*` presets
 
 ## 8. Environment Configuration
@@ -205,7 +215,7 @@ REDIS_PORT=6379
 # App Ports
 API_PORT=3001
 DASHBOARD_PORT=3000
-STREAM_ENGINE_PORT=3002
+STREAM_API_PORT=3002
 ```
 
 ### Docker Scripts (package.json)
@@ -217,4 +227,4 @@ STREAM_ENGINE_PORT=3002
 - `pnpm docker:clean` - Remove volumes + orphans
 
 ## 9. Open Questions / Blockers
-- None. Phase 1 progressing well. Next: BullMQ queue configuration.
+- None. Phase 1.5 complete. Ready for Phase 1.6 (HealthModule with Terminus).
