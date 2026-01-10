@@ -336,14 +336,15 @@ const logger = createLogger('live-dashboard');
   - [x] Data consistency: 184,849 K6 requests == 184,849 PostgreSQL rows ✅
 - [x] **DEFINITION OF DONE:** All acceptance criteria passed ✅
 
-### 1.11 Dockerfile (Optional - for containerization)
-- [ ] Create multi-stage Dockerfile:
-  - [ ] Stage 1: Base (Node 20 Alpine)
-  - [ ] Stage 2: Dependencies (pnpm install)
-  - [ ] Stage 3: Builder (pnpm build)
-  - [ ] Stage 4: Runner (production dependencies only)
-- [ ] Add ingestion-api service to `docker-compose.yml`
-- [ ] Test: `docker compose up ingestion-api`
+### 1.11 Dockerfile (Optional - for containerization) ✅
+- [x] Create multi-stage Dockerfile:
+  - [x] Stage 1: Base (Node 20 Alpine)
+  - [x] Stage 2: Dependencies (pnpm install)
+  - [x] Stage 3: Builder (pnpm build)
+  - [x] Stage 4: Runner (production dependencies only)
+- [x] Add ingestion-api service to `docker-compose.yml`
+- [x] Test: `docker compose up ingestion-api`
+- [x] Fix logger configuration for production Docker environments (pino-pretty only in development)
 
 ---
 
@@ -735,4 +736,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-01-10
-**Status:** Phase 1 in progress - WebSocket Gateway complete, next: K6 Load Testing 🚧
+**Status:** Phase 1 COMPLETE ✅ - All phases 1.1-1.11 finished. Ready for Phase 2 (Live Dashboard) 🎉
