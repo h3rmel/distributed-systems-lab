@@ -287,14 +287,17 @@ const logger = createLogger('live-dashboard');
 - [x] Import HealthModule in AppModule
 - [x] Test: `curl http://localhost:3001/health` returns `status: ok`
 
-### 1.8 Security & Rate Limiting
-- [ ] Install Fastify plugins:
-  - [ ] `pnpm add @fastify/helmet @fastify/cors @fastify/rate-limit`
-- [ ] Register in `main.ts`:
-  - [ ] Helmet: `await app.register(helmet)`
-  - [ ] CORS: `await app.register(cors, { origin: process.env.ALLOWED_ORIGINS })`
-  - [ ] Rate limit: `await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })`
-- [ ] Test rate limiting: Send 101 requests rapidly, verify 429 response
+### 1.8 Security & Rate Limiting ✅
+- [x] Install Fastify plugins:
+  - [x] `pnpm add @fastify/helmet @fastify/cors @fastify/rate-limit`
+- [x] Register in `main.ts`:
+  - [x] Helmet: `await app.register(helmet)` - 7 security headers
+  - [x] CORS: `await app.register(cors, { origin: ALLOWED_ORIGINS, credentials: true })`
+  - [x] Rate limit: `await app.register(rateLimit, { max: 100, timeWindow: '1 minute' })`
+- [x] Test scripts created in `scripts/`:
+  - [x] `test-helmet.sh` - Verifies security headers
+  - [x] `test-cors.sh` - Tests allowed/blocked origins + preflight
+  - [x] `test-rate-limit.sh` - Verifies 429 after 100 requests
 
 ### 1.9 WebSocket Gateway (For Dashboard)
 - [ ] Install: `pnpm add @nestjs/websockets @nestjs/platform-socket.io`
@@ -716,4 +719,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-01-10
-**Status:** Phase 1 in progress - HealthModule complete, next: WebSocket Gateway 🚧
+**Status:** Phase 1 in progress - Security & Rate Limiting complete, next: WebSocket Gateway 🚧

@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 IN PROGRESS.** Ingestion API: Phases 1.1-1.7 complete. Next: Phase 1.8 Security & Rate Limiting.
+- **Status**: **Phase 1 IN PROGRESS.** Ingestion API: Phases 1.1-1.8 complete. Next: Phase 1.9 WebSocket Gateway.
 
 ## 2. Monorepo Structure
 
@@ -57,6 +57,7 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-01-10 | App | Added security & rate limiting (@fastify/helmet, cors, rate-limit) |
 | 2026-01-10 | App | Added `HealthModule` with Terminus (database, redis, memory_heap checks) |
 | 2026-01-09 | Refactor | Renamed `stream-engine` → `stream-api` for consistency |
 | 2026-01-09 | Cleanup | Deleted `@distributed-systems-lab/logger` package (unused, NestJS uses nestjs-pino) |
@@ -93,7 +94,8 @@ distributed-systems-lab/
   - WebhookModule (controller + service + DTO)
   - WorkerModule (processor + idempotency)
   - HealthModule with Terminus (database, redis, memory checks)
-- **Current Phase**: Phase 1.8 - Security & Rate Limiting
+  - Security & Rate Limiting (helmet, cors, rate-limit)
+- **Current Phase**: Phase 1.9 - WebSocket Gateway for dashboard
 
 ### Project 2: Live Dashboard (`apps/live-dashboard`)
 - **Status**: Not started
@@ -126,8 +128,8 @@ distributed-systems-lab/
 - [x] Phase 1.5: Implement WorkerModule with idempotency
 - [x] Phase 1.6: Implement WebhookModule (controller + service)
 - [x] Phase 1.7: Add HealthModule with Terminus
-- [ ] Phase 1.8: Security & Rate Limiting ← **NEXT**
-- [ ] Phase 1.9: Add WebSocket Gateway for dashboard
+- [x] Phase 1.8: Security & Rate Limiting
+- [ ] Phase 1.9: Add WebSocket Gateway for dashboard ← **NEXT**
 - [ ] Phase 1.10: K6 load testing (500 VUs acceptance test)
 
 ### Phase 2: Live Dashboard (After Ingestion API)
@@ -230,4 +232,4 @@ STREAM_API_PORT=3002
 - `pnpm docker:clean` - Remove volumes + orphans
 
 ## 9. Open Questions / Blockers
-- None. Phase 1.7 complete. Ready for Phase 1.8 (Security & Rate Limiting).
+- None. Phase 1.8 complete. Ready for Phase 1.9 (WebSocket Gateway).
