@@ -19,15 +19,30 @@ import { MetricsModule } from './metrics';
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        pinoHttp: {
+      useFactory: (config: ConfigService) => {
+        // Check NODE_ENV directly from process.env to avoid ConfigService timing issues
+        const nodeEnv = process.env.NODE_ENV || config.get('NODE_ENV', 'development');
+        const isDevelopment = nodeEnv !== 'production';
+
+        const pinoConfig: {
+          level: string;
+          transport?: { target: string; options: { colorize: boolean } };
+        } = {
           level: config.get('LOG_LEVEL', 'info'),
-          transport:
-            config.get('NODE_ENV') !== 'production'
-              ? { target: 'pino-pretty', options: { colorize: true } }
-              : undefined,
-        },
-      }),
+        };
+
+        // Only add transport in development (when pino-pretty is available)
+        if (isDevelopment) {
+          pinoConfig.transport = {
+            target: 'pino-pretty',
+            options: { colorize: true },
+          };
+        }
+
+        return {
+          pinoHttp: pinoConfig,
+        };
+      },
     }),
 
     DatabaseModule,
