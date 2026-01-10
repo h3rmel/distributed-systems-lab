@@ -155,6 +155,16 @@
 ### 0.6 Shared Package: @distributed-systems-lab/logger ❌ DELETED
 > **Note:** This package was created but later deleted (2026-01-09). NestJS uses `nestjs-pino` directly, and Stream API will configure pino inline when built. Keeping this section for historical reference.
 
+### 0.7 Command System Refactoring ✅
+- [x] Create `.cursor/commands/` directory structure
+- [x] Split `mb-commands.mdc` into individual command files:
+  - [x] Each command in its own `.mdc` file (20 commands total)
+  - [x] File naming: `<command-name>.mdc`
+  - [x] Each file contains full command documentation with frontmatter
+- [x] Update `mb-commands.mdc` to reference commands directory
+- [x] Update `/list-commands` to read from `.cursor/commands/` directory
+- [x] Benefits: Better organization, easier maintenance, extensibility
+
 - [x] ~~Initialize package:~~
   - [x] `mkdir -p packages/logger/src && cd packages/logger && pnpm init`
   - [x] Set `"name": "@distributed-systems-lab/logger"` (scoped package name)
