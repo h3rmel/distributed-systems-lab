@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 IN PROGRESS.** Ingestion API: Phases 1.1-1.8 complete. Next: Phase 1.9 WebSocket Gateway.
+- **Status**: **Phase 1 IN PROGRESS.** Ingestion API: Phases 1.1-1.9 complete. Next: Phase 1.10 K6 Load Testing.
 
 ## 2. Monorepo Structure
 
@@ -57,6 +57,7 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-01-10 | App | Added WebSocket Gateway (MetricsGateway) for real-time dashboard events |
 | 2026-01-10 | App | Added security & rate limiting (@fastify/helmet, cors, rate-limit) |
 | 2026-01-10 | App | Added `HealthModule` with Terminus (database, redis, memory_heap checks) |
 | 2026-01-09 | Refactor | Renamed `stream-engine` → `stream-api` for consistency |
@@ -95,7 +96,8 @@ distributed-systems-lab/
   - WorkerModule (processor + idempotency)
   - HealthModule with Terminus (database, redis, memory checks)
   - Security & Rate Limiting (helmet, cors, rate-limit)
-- **Current Phase**: Phase 1.9 - WebSocket Gateway for dashboard
+  - WebSocket Gateway (MetricsGateway) for real-time events
+- **Current Phase**: Phase 1.10 - K6 Load Testing
 
 ### Project 2: Live Dashboard (`apps/live-dashboard`)
 - **Status**: Not started
@@ -129,8 +131,8 @@ distributed-systems-lab/
 - [x] Phase 1.6: Implement WebhookModule (controller + service)
 - [x] Phase 1.7: Add HealthModule with Terminus
 - [x] Phase 1.8: Security & Rate Limiting
-- [ ] Phase 1.9: Add WebSocket Gateway for dashboard ← **NEXT**
-- [ ] Phase 1.10: K6 load testing (500 VUs acceptance test)
+- [x] Phase 1.9: Add WebSocket Gateway for dashboard
+- [ ] Phase 1.10: K6 load testing (500 VUs acceptance test) ← **NEXT**
 
 ### Phase 2: Live Dashboard (After Ingestion API)
 - [ ] Initialize Next.js 14 with App Router
@@ -232,4 +234,4 @@ STREAM_API_PORT=3002
 - `pnpm docker:clean` - Remove volumes + orphans
 
 ## 9. Open Questions / Blockers
-- None. Phase 1.8 complete. Ready for Phase 1.9 (WebSocket Gateway).
+- None. Phase 1.9 complete. Ready for Phase 1.10 (K6 Load Testing).

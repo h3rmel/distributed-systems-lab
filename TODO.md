@@ -299,15 +299,21 @@ const logger = createLogger('live-dashboard');
   - [x] `test-cors.sh` - Tests allowed/blocked origins + preflight
   - [x] `test-rate-limit.sh` - Verifies 429 after 100 requests
 
-### 1.9 WebSocket Gateway (For Dashboard)
-- [ ] Install: `pnpm add @nestjs/websockets @nestjs/platform-socket.io`
-- [ ] Create `src/metrics/metrics.gateway.ts`:
-  - [ ] Decorate with `@WebSocketGateway({ cors: true })`
-  - [ ] Inject `@WebSocketServer() server: Server`
-- [ ] Update WebhookProcessor to emit events:
-  - [ ] Inject MetricsGateway
-  - [ ] After successful processing, emit: `gateway.server.emit('job-completed', { jobId, eventId, provider, processingTime })`
-- [ ] Test: Use Postman or socket.io client to connect to `ws://localhost:3000` and listen for `job-completed` events
+### 1.9 WebSocket Gateway (For Dashboard) ✅
+- [x] Install: `pnpm add @nestjs/websockets @nestjs/platform-socket.io socket.io`
+- [x] Create `src/metrics/metrics.gateway.ts`:
+  - [x] Decorate with `@WebSocketGateway({ cors: true })`
+  - [x] Inject `@WebSocketServer() server: Server`
+  - [x] Implement `emitJobCompleted()` method
+- [x] Create `src/metrics/metrics.module.ts` (Global module)
+- [x] Update WebhookProcessor to emit events:
+  - [x] Inject MetricsGateway
+  - [x] After successful processing, emit `job-completed` event with processing time
+  - [x] Add debug log for WebSocket emission
+- [x] Register MetricsModule in AppModule
+- [x] Tests:
+  - [x] Unit test: `metrics.gateway.spec.ts` (gateway emission)
+  - [x] E2E test: `metrics.e2e-spec.ts` (connection, events, full flow)
 
 ### 1.10 Load Testing (K6)
 - [ ] Create `tests/load-test.js` (copy from SPEC-INGESTION-API.md Appendix)
@@ -719,4 +725,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-01-10
-**Status:** Phase 1 in progress - Security & Rate Limiting complete, next: WebSocket Gateway 🚧
+**Status:** Phase 1 in progress - WebSocket Gateway complete, next: K6 Load Testing 🚧
