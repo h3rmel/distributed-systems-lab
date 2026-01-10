@@ -31,8 +31,24 @@ async function bootstrap() {
   });
 
   await app.register(rateLimit, {
-    max: 100,
+    max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
     timeWindow: '1 minute',
+    // Exclude routes from rate limiting
+    // allowList can be a function that returns truthy to exclude from rate limit
+    allowList: (request) => {
+      // Always exclude health endpoint
+      if (request.url === '/health') {
+        return true;
+      }
+      // Exclude webhook endpoints if DISABLE_WEBHOOK_RATE_LIMIT is set
+      if (
+        process.env.DISABLE_WEBHOOK_RATE_LIMIT === 'true' &&
+        request.url?.startsWith('/webhooks/')
+      ) {
+        return true;
+      }
+      return false;
+    },
   });
 
   app.useGlobalPipes(
@@ -46,4 +62,4 @@ async function bootstrap() {
   // Listen on 0.0.0.0 for Docker compatibility
   await app.listen(process.env.PORT ?? 3001, '0.0.0.0');
 }
-bootstrap();
+void bootstrap();

@@ -17,6 +17,7 @@
     "docker:restart": "docker compose restart",
     "docker:clean": "docker compose down -v --remove-orphans",
     "docker:db": "docker compose exec postgres psql -U dev_user -d distributed_lab",
+    "docker:db:clean": "docker compose exec postgres psql -U dev_user -d distributed_lab -c 'TRUNCATE TABLE webhook_events;'",
     "docker:redis": "docker compose exec redis redis-cli"
   },
   "license": "MIT",

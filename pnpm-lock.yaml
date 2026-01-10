@@ -111,6 +111,9 @@ importers:
       '@types/jest':
         specifier: ^30.0.0
         version: 30.0.0
+      '@types/k6':
+        specifier: ^1.5.0
+        version: 1.5.0
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.3
@@ -1561,6 +1564,9 @@ packages:
 
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/k6@1.5.0':
+    resolution: {integrity: sha512-eQmSjjgYO1irlOmoZzGSuoYsK2uMrX3m/flcnqt5IDLA9D/vkPcRsAKfe9D6GrjXATD/Oo9ynQ6vc13V02WRmQ==}
 
   '@types/methods@1.1.4':
     resolution: {integrity: sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==}
@@ -5446,6 +5452,8 @@ snapshots:
       pretty-format: 30.2.0
 
   '@types/json-schema@7.0.15': {}
+
+  '@types/k6@1.5.0': {}
 
   '@types/methods@1.1.4': {}
 
