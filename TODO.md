@@ -239,66 +239,53 @@ const logger = createLogger('live-dashboard');
 - [x] Test: Inject connection in AppService, verified with `SELECT 1` query
 - [x] Added `drizzle-orm` and `postgres` as direct dependencies
 
-### 1.4 BullMQ Queue Configuration
-- [ ] Import `BullModule.forRootAsync()` in AppModule:
-  - [ ] Inject `ConfigService`
-  - [ ] Configure Redis connection (host, port from env)
-- [ ] Create `src/webhook/webhook.module.ts`
-- [ ] Register queue: `BullModule.registerQueue({ name: 'webhooks' })`
+### 1.4 BullMQ Queue Configuration ✅
+- [x] Import `BullModule.forRootAsync()` in AppModule:
+  - [x] Inject `ConfigService`
+  - [x] Configure Redis connection (host, port from env)
+- [x] Create `src/queue/queue.module.ts`
+- [x] Register queue: `BullModule.registerQueue({ name: 'webhooks' })`
+- [x] Configure default job options (attempts, backoff, removeOnComplete)
 
-### 1.5 Webhook Module (API Layer)
-- [ ] Create `src/webhook/dto/create-webhook.dto.ts`:
-  - [ ] Add decorators: `@IsString()`, `@IsNotEmpty()`, `@IsISO8601()`, `@IsObject()`
-  - [ ] Properties: provider, eventId, timestamp, data
-- [ ] Create `src/webhook/webhook.controller.ts`:
-  - [ ] Inject `@InjectQueue('webhooks') private webhookQueue: Queue`
-  - [ ] Inject `PinoLogger`
-  - [ ] Create `@Post(':provider')` endpoint
-  - [ ] Validate DTO with `@Body() dto: CreateWebhookDto`
-  - [ ] Add job to queue: `await this.webhookQueue.add('ingest', { ...dto, provider })`
-  - [ ] Return `{ accepted: true, jobId: job.id }` with HTTP 202
-- [ ] Enable global ValidationPipe in `main.ts`:
-  - [ ] `app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }))`
-- [ ] Test endpoint:
-  - [ ] `curl -X POST http://localhost:3000/webhooks/stripe -H "Content-Type: application/json" -d '{"eventId":"evt_test","timestamp":"2024-01-01T00:00:00Z","data":{}}'`
-  - [ ] Verify 202 response with jobId
-  - [ ] Check Redis: `docker compose exec redis redis-cli KEYS '*'` (should see BullMQ keys)
+### 1.5 Webhook Module (API Layer) ✅
+- [x] Create `src/webhook/dto/create-webhook.dto.ts`:
+  - [x] Add decorators: `@IsString()`, `@IsNotEmpty()`, `@IsISO8601()`, `@IsObject()`
+  - [x] Properties: provider, eventId, timestamp, data
+- [x] Create `src/webhook/webhook.controller.ts`:
+  - [x] Inject Queue via WebhookService
+  - [x] Create `@Post(':provider')` endpoint
+  - [x] Validate DTO with `@Body() dto: CreateWebhookDto`
+  - [x] Return `{ accepted: true, jobId }` with HTTP 202
+- [x] Enable global ValidationPipe in `main.ts`
+- [x] Test endpoint with curl (verified 202 response)
 
-### 1.6 Worker Module (Processor Layer)
-- [ ] Create `src/worker/worker.module.ts`
-- [ ] Create Redis client module:
-  - [ ] Create `src/redis/redis.module.ts`
-  - [ ] Provider: `'REDIS_CLIENT'` using `ioredis`
-  - [ ] Export provider
-- [ ] Create `src/worker/webhook.processor.ts`:
-  - [ ] Decorate with `@Processor('webhooks')`
-  - [ ] Inject `'DATABASE_CONNECTION'` and `'REDIS_CLIENT'`
-  - [ ] Inject `PinoLogger`
-  - [ ] Create `@Process('ingest')` method:
-    - [ ] Extract `eventId` from `job.data`
-    - [ ] Check idempotency: `await redis.get(`processed:${eventId}`)`
-    - [ ] If exists, log warning and return (skip duplicate)
-    - [ ] Insert to database: `await db.insert(webhooksTable).values(job.data)`
-    - [ ] Set idempotency key: `await redis.setex(`processed:${eventId}`, 86400, '1')` (24h TTL)
-    - [ ] Log success: `{ eventId, provider, jobId: job.id }`
-  - [ ] Wrap in try/catch, log errors, rethrow (BullMQ handles retries)
-- [ ] Import WorkerModule in AppModule
-- [ ] Test processor:
-  - [ ] Send webhook via curl
-  - [ ] Check logs for "Webhook processed"
-  - [ ] Verify database: `docker compose exec postgres psql -U dev_user -d distributed_lab -c 'SELECT * FROM webhooks;'`
-  - [ ] Send same webhook again (duplicate), verify it's skipped
+### 1.6 Worker Module (Processor Layer) ✅
+- [x] Create `src/worker/worker.module.ts`
+- [x] Create `src/worker/idempotency.service.ts`:
+  - [x] Redis client via ioredis
+  - [x] `isProcessed(eventId)` and `markAsProcessed(eventId)` methods
+  - [x] 24h TTL for idempotency keys
+- [x] Create `src/worker/webhook.processor.ts`:
+  - [x] Decorate with `@Processor('webhooks')`
+  - [x] Inject `DATABASE_CONNECTION` and `IdempotencyService`
+  - [x] Idempotency check before processing
+  - [x] Insert to database via Drizzle ORM
+  - [x] Log success with structured context
+- [x] Import WorkerModule in AppModule
+- [x] Test: duplicate webhooks are skipped
 
-### 1.7 Health Module (Terminus)
-- [ ] Install: `pnpm add @nestjs/terminus`
-- [ ] Create `src/health/health.module.ts`
-- [ ] Create `src/health/health.controller.ts`:
-  - [ ] Inject `HealthCheckService`
-  - [ ] Create health indicators for database and Redis
-  - [ ] `@Get()` endpoint with `@HealthCheck()` decorator
-  - [ ] Return `this.health.check([...checks])`
-- [ ] Import HealthModule in AppModule
-- [ ] Test: `curl http://localhost:3000/health` (should return status: ok)
+### 1.7 Health Module (Terminus) ✅
+- [x] Install: `pnpm add @nestjs/terminus`
+- [x] Create `src/health/health.module.ts`
+- [x] Create `src/health/health.controller.ts`:
+  - [x] Inject `HealthCheckService`, `MemoryHealthIndicator`
+  - [x] Inject custom `DatabaseHealthIndicator`, `RedisHealthIndicator`
+  - [x] `@Get()` endpoint with `@HealthCheck()` decorator
+- [x] Create custom health indicators:
+  - [x] `DatabaseHealthIndicator` - Drizzle/postgres.js ping via `SELECT 1`
+  - [x] `RedisHealthIndicator` - ioredis ping
+- [x] Import HealthModule in AppModule
+- [x] Test: `curl http://localhost:3001/health` returns `status: ok`
 
 ### 1.8 Security & Rate Limiting
 - [ ] Install Fastify plugins:
@@ -728,5 +715,5 @@ const logger = createLogger('live-dashboard');
 
 ---
 
-**Last Updated:** 2026-01-08
-**Status:** Phase 1 in progress - Ingestion API setup complete, next: BullMQ 🚧
+**Last Updated:** 2026-01-10
+**Status:** Phase 1 in progress - HealthModule complete, next: WebSocket Gateway 🚧
