@@ -12,7 +12,7 @@ description: Return the list of available Memory Bank commands in a lean format.
 
 **AI Actions:**
 1. Read all command files in `.cursor/commands/`
-2. Extract command names from filenames (remove `.mdc` extension)
+2. Extract command names from filenames (remove `.md` extension)
 3. Extract purposes from frontmatter `description` field
 4. Print the lean list in alphabetical order
 

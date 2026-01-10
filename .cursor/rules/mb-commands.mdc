@@ -10,7 +10,7 @@ Standardized commands for consistent AI assistant behavior. These commands defin
 
 **Commands are now organized in individual files:**
 - Each command has its own file in `.cursor/commands/`
-- File naming: `<command-name>.mdc` (e.g., `summarize.mdc`, `commit.mdc`)
+- File naming: `<command-name>.md` (e.g., `summarize.md`, `commit.md`)
 - Each file contains the full command documentation
 
 **To view all commands:**

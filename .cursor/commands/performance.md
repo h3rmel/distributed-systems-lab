@@ -1,5 +1,6 @@
 ---
 description: Analyze performance characteristics and suggest optimizations.
+
 ---
 
 # `/performance [file/function]`
