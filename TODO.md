@@ -346,6 +346,66 @@ const logger = createLogger('live-dashboard');
 - [x] Test: `docker compose up ingestion-api`
 - [x] Fix logger configuration for production Docker environments (pino-pretty only in development)
 
+### 1.12 Unit Tests
+- [ ] Setup test utilities and mocks:
+  - [ ] Create `test/utils/test-helpers.ts` for common test utilities
+  - [ ] Create `test/mocks/` directory for shared mocks (Redis, Database, Queue)
+  - [ ] Configure Jest coverage thresholds (target: 80%+ overall, 90%+ for services)
+- [ ] Webhook Module Tests:
+  - [ ] `webhook.controller.spec.ts`:
+    - [ ] Should call service.enqueue() with correct parameters
+    - [ ] Should return 202 Accepted with IngestResponseDto
+    - [ ] Should handle validation errors (400 Bad Request)
+  - [ ] `webhook.service.spec.ts`:
+    - [ ] Should enqueue job with correct WebhookJobData
+    - [ ] Should use eventId as jobId
+    - [ ] Should return accepted: true with jobId
+    - [ ] Should handle queue errors gracefully
+  - [ ] `dto/create-webhook.dto.spec.ts`:
+    - [ ] Should validate required fields (eventId, timestamp, data)
+    - [ ] Should reject invalid ISO8601 timestamps
+    - [ ] Should reject non-object data field
+- [ ] Worker Module Tests:
+  - [ ] `idempotency.service.spec.ts`:
+    - [ ] Should return false for unprocessed eventId
+    - [ ] Should return true for processed eventId
+    - [ ] Should mark eventId as processed with 24h TTL
+    - [ ] Should build correct Redis key format
+    - [ ] Should close Redis connection on module destroy
+  - [ ] `webhook.processor.spec.ts`:
+    - [ ] Should skip processing if eventId already processed
+    - [ ] Should insert webhook event to database
+    - [ ] Should mark eventId as processed after insert
+    - [ ] Should emit job-completed event via MetricsGateway
+    - [ ] Should calculate processing time correctly
+    - [ ] Should log appropriate messages at each stage
+    - [ ] Should handle database errors gracefully
+- [ ] Health Module Tests:
+  - [ ] `health.controller.spec.ts`:
+    - [ ] Should call all health indicators
+    - [ ] Should return health check result
+  - [ ] `indicators/database.health.spec.ts`:
+    - [ ] Should return up when database is healthy (SELECT 1 succeeds)
+    - [ ] Should return down when database query fails
+  - [ ] `indicators/redis.health.spec.ts`:
+    - [ ] Should return up when Redis PING returns PONG
+    - [ ] Should return down when Redis PING fails
+    - [ ] Should close Redis connection on module destroy
+- [ ] Metrics Module Tests:
+  - [ ] `metrics.gateway.spec.ts` (already exists, verify completeness):
+    - [x] Should emit job-completed event with correct payload
+    - [x] Should emit to all connected clients
+  - [ ] Add edge case tests if needed
+- [ ] App Module Tests:
+  - [ ] `app.controller.spec.ts`:
+    - [ ] Should return root endpoint response
+  - [ ] `app.service.spec.ts`:
+    - [ ] Should return getHello() response
+- [ ] Run test coverage:
+  - [ ] `pnpm test:cov` - Verify coverage thresholds met
+  - [ ] Review coverage report for untested edge cases
+  - [ ] Add missing tests to reach 80%+ coverage
+
 ---
 
 ## Phase 2: Live Dashboard (Next.js 14 + Zustand + Socket.io)
@@ -736,4 +796,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-01-10
-**Status:** Phase 1 COMPLETE ✅ - All phases 1.1-1.11 finished. Ready for Phase 2 (Live Dashboard) 🎉
+**Status:** Phase 1 in progress - Phases 1.1-1.11 complete. Current: Phase 1.12 (Unit Tests) 🚧

@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 COMPLETE ✅** - Ingestion API: All phases 1.1-1.11 finished. Ready for Phase 2 (Live Dashboard).
+- **Status**: **Phase 1 IN PROGRESS** - Ingestion API: Phases 1.1-1.11 complete. Current: Phase 1.12 (Unit Tests).
 
 ## 2. Monorepo Structure
 
@@ -57,6 +57,7 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-01-10 | Docs | Added Phase 1.12 (Unit Tests) to roadmap |
 | 2026-01-10 | App | Added Dockerfile and docker-compose integration for ingestion-api |
 | 2026-01-10 | App | Fixed logger configuration for production Docker environments |
 | 2026-01-10 | App | Added WebSocket Gateway (MetricsGateway) for real-time dashboard events |
@@ -85,7 +86,7 @@ distributed-systems-lab/
 - [x] `@distributed-systems-lab/eslint-config` package
 
 ### Project 1: Ingestion API (`apps/ingestion-api`)
-- **Status**: **✅ COMPLETE** - All phases 1.1-1.11 finished
+- **Status**: **🚧 IN PROGRESS** - Phases 1.1-1.11 complete, Phase 1.12 (Unit Tests) in progress
 - **Tech Stack**: NestJS 11 + FastifyAdapter + BullMQ + PostgreSQL + Drizzle ORM
 - **Key Features**: Webhook ingestion, async processing, idempotency checks, health monitoring, Docker containerization
 - **Target KPIs**: 500 VUs, < 100ms P95, < 1% error rate
@@ -126,7 +127,7 @@ distributed-systems-lab/
 
 ## 5. Next Steps (Checklist)
 
-### Phase 1: Ingestion API ✅ COMPLETE
+### Phase 1: Ingestion API (Current Focus)
 - [x] Phase 1.1: Initialize NestJS with FastifyAdapter + nestjs-pino
 - [x] Phase 1.2: Configure DatabaseModule with Drizzle ORM
 - [x] Phase 1.3: Setup BullMQ queue configuration
@@ -138,6 +139,7 @@ distributed-systems-lab/
 - [x] Phase 1.9: Add WebSocket Gateway for dashboard
 - [x] Phase 1.10: K6 load testing (500 VUs acceptance test) ✅
 - [x] Phase 1.11: Dockerfile and docker-compose integration ✅
+- [ ] Phase 1.12: Unit Tests (target: 80%+ coverage)
 
 ### Phase 2: Live Dashboard (After Ingestion API)
 - [ ] Initialize Next.js 14 with App Router
@@ -239,11 +241,10 @@ STREAM_API_PORT=3002
 - `pnpm docker:clean` - Remove volumes + orphans
 
 ## 9. Open Questions / Blockers
-- None. **Phase 1 COMPLETE!** ✅ All phases 1.1-1.11 finished:
-  - 0% error rate (target < 1%)
-  - 7.35ms P95 latency (target < 100ms)
-  - 499 max VUs (target 500)
-  - 100% data consistency (184,849 requests == 184,849 DB rows)
-  - Docker containerization with multi-stage build
+- None. **Phase 1.12 in progress** - Unit testing phase:
+  - Target: 80%+ overall coverage, 90%+ for services
+  - Modules to test: Webhook, Worker, Health, Metrics, App
+  - Focus: Business logic, error handling, edge cases
   
+**Current:** Phase 1.12 - Unit Tests  
 **Next:** Phase 2 - Live Dashboard (Next.js 14 + Socket.io)
