@@ -17,7 +17,6 @@ interface SocketClient {
 }
 
 function createSocketClient(url: string): SocketClient {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
   const socketInstance = io(url, {
     transports: ['websocket'],
     autoConnect: false,

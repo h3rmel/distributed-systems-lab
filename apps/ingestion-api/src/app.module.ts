@@ -21,7 +21,8 @@ import { MetricsModule } from './metrics';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         // Check NODE_ENV directly from process.env to avoid ConfigService timing issues
-        const nodeEnv = process.env.NODE_ENV || config.get('NODE_ENV', 'development');
+        const nodeEnv =
+          process.env.NODE_ENV || config.get('NODE_ENV', 'development');
         const isDevelopment = nodeEnv !== 'production';
 
         const pinoConfig: {
