@@ -537,6 +537,8 @@ const logger = createLogger('live-dashboard');
   - [ ] Set `"type": "module"` for ESM support
 - [ ] Install dependencies:
   - [ ] `pnpm add fastify @fastify/multipart`
+  - [ ] `pnpm add @aws-sdk/client-s3 @aws-sdk/lib-storage` (S3 streaming upload/download)
+  - [ ] `pnpm add minio` (S3-compatible for local development)
   - [ ] `pnpm add fast-csv` (streaming CSV parser)
   - [ ] `pnpm add pg pg-copy-streams` (Postgres COPY protocol)
   - [ ] `pnpm add @repo/database` (workspace package)
@@ -552,23 +554,90 @@ const logger = createLogger('live-dashboard');
   - [ ] Create app: `const app = Fastify({ logger: true })`
   - [ ] Register multipart plugin:
     - [ ] `await app.register(multipart, { limits: { fileSize: 5 * 1024 * 1024 * 1024 } })` (5GB)
-  - [ ] Start server: `await app.listen({ port: 3001, host: '0.0.0.0' })`
+  - [ ] Start server: `await app.listen({ port: 3002, host: '0.0.0.0' })`
 - [ ] Add start script to `package.json`: `"start": "node dist/server.js"`
-- [ ] Test: `pnpm build && pnpm start` (server should start on port 3001)
+- [ ] Test: `pnpm build && pnpm start` (server should start on port 3002)
 
-### 3.3 Streaming Pipeline (CSV Upload Endpoint)
+### 3.3 Object Storage Service (S3/MinIO)
+- [ ] Create `src/storage/storage.service.ts`:
+  - [ ] Import `S3Client` from `@aws-sdk/client-s3`
+  - [ ] Import `Client` from `minio`
+  - [ ] Create factory function to initialize S3 client:
+    - [ ] Production: Use AWS S3 with credentials from env
+    - [ ] Development: Use MinIO client (localhost:9000)
+  - [ ] Export S3 client instance
+- [ ] Create `src/storage/upload.service.ts`:
+  - [ ] Import `Upload` from `@aws-sdk/lib-storage`
+  - [ ] Create `uploadFileToS3(fileStream, objectKey)` function:
+    - [ ] Use `Upload` class for streaming upload
+    - [ ] Configure bucket and key from env
+    - [ ] Return upload promise
+  - [ ] Handle upload errors (cleanup on failure)
+- [ ] Create `src/storage/download.service.ts`:
+  - [ ] Import `GetObjectCommand` from `@aws-sdk/client-s3`
+  - [ ] Create `downloadFileFromS3(objectKey)` function:
+    - [ ] Use `GetObjectCommand` to get streaming download
+    - [ ] Return `response.Body` as ReadableStream
+  - [ ] Handle download errors
+- [ ] Create `src/storage/cleanup.service.ts`:
+  - [ ] Import `DeleteObjectCommand from `@aws-sdk/client-s3`
+  - [ ] Create `deleteFileFromS3(objectKey)` function
+  - [ ] Handle cleanup errors gracefully
+- [ ] Add environment variables to `.env`:
+  - [ ] `S3_ENDPOINT=http://localhost:9000` (MinIO for dev)
+  - [ ] `S3_BUCKET=csv-uploads`
+  - [ ] `S3_ACCESS_KEY=minioadmin`
+  - [ ] `S3_SECRET_KEY=minioadmin`
+  - [ ] `S3_REGION=us-east-1` (for AWS S3)
+
+### 3.4 Upload Endpoint (Stage 1: HTTP → Object Storage)
 - [ ] Create `src/routes/upload.ts`:
-  - [ ] Import `pipeline` from `stream/promises`
-  - [ ] Import `parse` from `fast-csv`
+  - [ ] Import `Upload` from `@aws-sdk/lib-storage`
+  - [ ] Import upload service
   - [ ] Create POST `/upload` route:
     - [ ] Get file: `const data = await request.file()`
     - [ ] Validate file exists
-    - [ ] Setup pipeline: `data.file` → `csvParser` → `validationTransform` → `postgresWriteStream`
-  - [ ] Use `await pipeline(...)` for automatic error handling and cleanup
+    - [ ] Generate unique upload ID and object key: `uploads/${uploadId}.csv`
+    - [ ] Stream HTTP file directly to S3/MinIO:
+      ```typescript
+      const upload = new Upload({
+        client: s3Client,
+        params: {
+          Bucket: process.env.S3_BUCKET,
+          Key: objectKey,
+          Body: data.file, // HTTP stream
+        },
+      });
+      await upload.done();
+      ```
+    - [ ] Return HTTP 202 Accepted: `{ uploadId, objectKey, status: 'uploaded' }`
+    - [ ] Trigger async processing (or queue job)
+  - [ ] Handle upload errors:
+    - [ ] Cleanup object from S3 on failure
+    - [ ] Return appropriate error response
 - [ ] **CRITICAL:** Do NOT use `fs.readFileSync` or load entire file into memory
-- [ ] **CRITICAL:** Use `stream.pipeline()` for all operations
+- [ ] **CRITICAL:** Stream directly from HTTP to S3 (no local disk writes)
 
-### 3.4 Validation Transform Stream
+### 3.5 Processing Endpoint (Stage 2: Object Storage → Database)
+- [ ] Create `src/routes/process.ts`:
+  - [ ] Import `pipeline` from `stream/promises`
+  - [ ] Import `parse` from `fast-csv`
+  - [ ] Import download service and cleanup service
+  - [ ] Create POST `/upload/:uploadId/process` route (or process automatically after upload):
+    - [ ] Get object key from upload ID
+    - [ ] Stream file from S3: `const fileStream = await downloadFileFromS3(objectKey)`
+    - [ ] Setup pipeline: `fileStream` → `csvParser` → `validationTransform` → `formatterTransform` → `postgresWriteStream`
+    - [ ] Use `await pipeline(...)` for automatic error handling and cleanup
+    - [ ] On success: Delete object from S3, return `{ success: true, rowsProcessed: count }`
+    - [ ] On failure: Keep object in S3 for retry, return error
+  - [ ] Create POST `/upload/:uploadId/retry` route:
+    - [ ] Check if object exists in S3
+    - [ ] Retry processing pipeline
+    - [ ] Return result
+- [ ] **CRITICAL:** Use `stream.pipeline()` for all operations
+- [ ] **CRITICAL:** Only delete object from S3 after successful database processing
+
+### 3.6 Validation Transform Stream
 - [ ] Create `src/transforms/validation.ts`:
   - [ ] Import `Transform` from `stream`
   - [ ] Create class extending `Transform`:
@@ -580,7 +649,7 @@ const logger = createLogger('live-dashboard');
       - [ ] If invalid: log warning, `callback()` (skip row, continue processing)
   - [ ] Export class
 
-### 3.5 CSV Formatter Transform (For Postgres COPY)
+### 3.7 CSV Formatter Transform (For Postgres COPY)
 - [ ] Create `src/transforms/formatter.ts`:
   - [ ] Create Transform stream that converts objects to CSV format
   - [ ] Implement `_transform(obj, encoding, callback)`:
@@ -589,7 +658,7 @@ const logger = createLogger('live-dashboard');
     - [ ] `this.push(csvLine); callback()`
   - [ ] Export class
 
-### 3.6 Postgres COPY Stream
+### 3.8 Postgres COPY Stream
 - [ ] Create `src/streams/postgres-writer.ts`:
   - [ ] Import `copyFrom` from `pg-copy-streams`
   - [ ] Create function `createPostgresWriteStream()`:
@@ -600,25 +669,25 @@ const logger = createLogger('live-dashboard');
   - [ ] Handle cleanup: release client after stream ends
 - [ ] **CRITICAL:** Use COPY protocol (NOT individual INSERTs - 100x slower)
 
-### 3.7 Complete Pipeline Integration
-- [ ] Update `src/routes/upload.ts`:
+### 3.9 Complete Pipeline Integration
+- [ ] Update `src/routes/process.ts`:
   - [ ] Import all transforms and streams
   - [ ] Build complete pipeline:
     ```typescript
     await pipeline(
-      data.file,
-      parse({ headers: true }),
-      new ValidationTransform(),
-      new FormatterTransform(),
-      createPostgresWriteStream(),
+      s3FileStream,              // From S3 download
+      parse({ headers: true }),   // CSV → Objects
+      new ValidationTransform(),  // Validate & sanitize
+      new FormatterTransform(),   // Objects → CSV format
+      createPostgresWriteStream(), // COPY to database
     );
     ```
   - [ ] Wrap in try/catch:
-    - [ ] On success: return `{ success: true, message: 'File processed' }`
-    - [ ] On error: log error, return `{ success: false, error: error.message }`
-- [ ] Register route in server: `app.register(uploadRoutes)`
+    - [ ] On success: Delete from S3, return `{ success: true, rowsProcessed: count }`
+    - [ ] On error: Keep object in S3, log error, return `{ success: false, error: error.message }`
+- [ ] Register routes in server: `app.register(uploadRoutes)` and `app.register(processRoutes)`
 
-### 3.8 Memory Monitoring
+### 3.10 Memory Monitoring
 - [ ] Create `src/monitoring/memory.ts`:
   - [ ] Import `v8` from `node:v8`
   - [ ] Create function `startMemoryMonitoring()`:
@@ -630,12 +699,24 @@ const logger = createLogger('live-dashboard');
   - [ ] Export function
 - [ ] Call `startMemoryMonitoring()` in `src/server.ts` after server starts
 
-### 3.9 Docker Configuration (512MB Memory Limit)
+### 3.11 Docker Configuration (512MB Memory Limit + MinIO)
+- [ ] Add MinIO service to `docker-compose.yml`:
+  - [ ] Image: `minio/minio:latest`
+  - [ ] Ports: `9000:9000` (API), `9001:9001` (Console)
+  - [ ] Environment: `MINIO_ROOT_USER=minioadmin`, `MINIO_ROOT_PASSWORD=minioadmin`
+  - [ ] Command: `server /data --console-address ":9001"`
+  - [ ] Volumes: `minio-data:/data`
+  - [ ] Health check: `curl -f http://localhost:9000/minio/health/live`
 - [ ] Add stream-api service to `docker-compose.yml`:
   - [ ] Build from `./apps/stream-api`
-  - [ ] Port: `3001:3001`
-  - [ ] Depends on: postgres
+  - [ ] Port: `3002:3002`
+  - [ ] Depends on: postgres, minio
   - [ ] Environment: Database connection from `.env`
+  - [ ] Environment: S3/MinIO connection:
+    - [ ] `S3_ENDPOINT=http://minio:9000`
+    - [ ] `S3_BUCKET=csv-uploads`
+    - [ ] `S3_ACCESS_KEY=minioadmin`
+    - [ ] `S3_SECRET_KEY=minioadmin`
   - [ ] **CRITICAL:** Add resource limits:
     ```yaml
     deploy:
@@ -645,25 +726,45 @@ const logger = createLogger('live-dashboard');
     ```
   - [ ] Environment: `NODE_OPTIONS=--max-old-space-size=450` (leave headroom)
 - [ ] Create `Dockerfile` in `apps/stream-api/`
-- [ ] Test: `docker compose up stream-api`
+- [ ] Initialize MinIO bucket:
+  - [ ] Create script or use MinIO client to create `csv-uploads` bucket on startup
+  - [ ] Or document manual bucket creation via MinIO console (http://localhost:9001)
+- [ ] Test: `docker compose up stream-api minio`
 
-### 3.10 Load Testing (OOM Test)
+### 3.12 Load Testing (OOM Test)
 - [ ] Generate test CSV file:
   - [ ] Create script to generate 5 million rows (~1GB)
   - [ ] Columns: provider, eventId, timestamp, data (JSON)
   - [ ] Use unique eventIds (e.g., `evt_${i}`)
 - [ ] Upload via curl:
-  - [ ] `curl -F "file=@large.csv" http://localhost:3001/upload`
-- [ ] Monitor during upload:
+  - [ ] `curl -X POST -F "file=@large.csv" http://localhost:3002/upload`
+  - [ ] Verify HTTP 202 Accepted response with `uploadId` and `objectKey`
+- [ ] Verify object storage:
+  - [ ] Check MinIO console: http://localhost:9001
+  - [ ] Verify file exists in `csv-uploads` bucket
+  - [ ] Verify file size matches uploaded CSV
+- [ ] Monitor during processing:
   - [ ] Terminal 1: `docker stats stream-api` (watch memory usage)
   - [ ] Terminal 2: Watch application logs (memory monitoring output)
+  - [ ] Terminal 3: Monitor MinIO console for object deletion after processing
 - [ ] Verify acceptance criteria:
-  - [ ] Memory stays flat (100-200MB oscillation, NOT linear growth)
-  - [ ] Completion: HTTP 200 returned only after all rows processed
-  - [ ] Database consistency: `SELECT COUNT(*) FROM webhooks` == CSV row count
+  - [ ] **Upload Stage:**
+    - [ ] HTTP 202 returned immediately after upload
+    - [ ] File visible in MinIO console
+    - [ ] Memory during upload: ~16-64KB buffer (streaming)
+  - [ ] **Processing Stage:**
+    - [ ] Memory stays flat (100-200MB oscillation, NOT linear growth)
+    - [ ] Completion: HTTP 200 returned only after all rows processed
+    - [ ] Database consistency: `SELECT COUNT(*) FROM webhook_events` == CSV row count
+    - [ ] Object deleted from MinIO after successful processing
+  - [ ] **Retry Mechanism:**
+    - [ ] Simulate processing failure (stop database)
+    - [ ] Verify object remains in MinIO
+    - [ ] Retry via `POST /upload/:uploadId/retry`
+    - [ ] Verify retry succeeds and processes all rows
 - [ ] **DEFINITION OF DONE:** All acceptance criteria passed ✅
 
-### 3.11 Error Handling & Graceful Shutdown
+### 3.13 Error Handling & Graceful Shutdown
 - [ ] Add error handling at each pipeline stage
 - [ ] Implement graceful shutdown:
   - [ ] Listen for SIGTERM/SIGINT
