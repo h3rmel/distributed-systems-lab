@@ -29,6 +29,7 @@ Each ADR follows this structure:
 | [0004](./0004-use-zustand-over-react-context-for-high-frequency-updates.md) | Use Zustand over React Context | Accepted | Dashboard |
 | [0005](./0005-use-object-storage-for-stream-api-uploads.md) | Use Object Storage for Stream API | Accepted | Stream API |
 | [0006](./0006-use-postgres-copy-protocol-for-bulk-inserts.md) | Use Postgres COPY Protocol | Accepted | Stream API |
+| [0007](./0007-notification-system-for-stream-api.md) | Notification System for Stream API | Accepted | Stream API |
 
 ## When to Create an ADR
 

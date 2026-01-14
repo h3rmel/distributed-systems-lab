@@ -50,12 +50,13 @@ graph LR
 ```
 
 **Complete Flow:**
-1. Client uploads file via HTTP POST
+1. Client uploads file via HTTP POST (optionally provides `callbackUrl`)
 2. Fastify streams upload directly to S3/MinIO (no local disk)
-3. Return HTTP 202 Accepted immediately after upload completes
+3. Return HTTP 202 Accepted immediately after upload completes with `uploadId`
 4. Process file asynchronously: Stream from S3 → Parse → Validate → Database
-5. Delete object from S3 after successful processing
-6. Return HTTP 200 OK only after all rows persisted
+5. Update processing status (uploaded → processing → completed/failed)
+6. Send notification (webhook callback if provided, or user polls status endpoint)
+7. Delete object from S3 after successful processing
 
 **Benefits:**
 - **Network Reliability:** Upload completes before processing starts
@@ -72,25 +73,37 @@ graph LR
 **Logic:**
 
 1. Receive multipart file upload via Fastify
-2. Stream HTTP request directly to S3/MinIO using `@aws-sdk/lib-storage` Upload class
-3. Return HTTP 202 Accepted immediately after upload completes
+2. Accept optional `callbackUrl` parameter in request body/form-data
+3. Stream HTTP request directly to S3/MinIO using `@aws-sdk/lib-storage` Upload class
 4. Generate unique upload ID and object key for tracking
+5. Store upload metadata (uploadId, callbackUrl, status: 'uploaded') in database/Redis
+6. Return HTTP 202 Accepted immediately after upload completes with `{ uploadId, status: 'uploaded' }`
 
 **Key Implementation:**
 - Use `Upload` class from `@aws-sdk/lib-storage` for streaming uploads
 - No local disk writes - stream directly from HTTP to S3
 - Handle upload errors gracefully (cleanup object on failure)
+- Validate `callbackUrl` format if provided (must be valid HTTP/HTTPS URL)
 
 ### Module B: Processing Controller (Stage 2)
 
-**Role:** Orchestrate database processing pipeline.
+**Role:** Orchestrate database processing pipeline and notifications.
 **Logic:**
 
-1. Stream file from S3/MinIO using `GetObjectCommand`
-2. Initialize `pipeline(source, transform, destination)` for processing
-3. Handle `error` events at any stage to prevent "Unhandled Promise Rejection"
-4. Delete object from S3 after successful processing
-5. Return processing result (success/failure with row count)
+1. Update status to 'processing' in database/Redis
+2. Stream file from S3/MinIO using `GetObjectCommand`
+3. Initialize `pipeline(source, transform, destination)` for processing
+4. Track progress (rows processed, errors encountered)
+5. Handle `error` events at any stage to prevent "Unhandled Promise Rejection"
+6. On completion:
+   - Update status to 'completed' or 'failed' with result metadata
+   - Trigger notification (webhook callback if provided)
+   - Delete object from S3 after successful processing
+7. Return processing result (success/failure with row count)
+
+**Status Tracking:**
+- Store processing status: `uploaded` → `processing` → `completed` | `failed`
+- Include metadata: `rowsProcessed`, `rowsFailed`, `error?`, `startedAt`, `completedAt`
 
 ### Module C: The Transform Layers
 
@@ -116,7 +129,35 @@ graph LR
 - Use `minio` client for local development (S3-compatible)
 - Support both production (S3) and development (MinIO) environments
 
-### Module E: Infrastructure (Constraints)
+### Module F: Notification System
+
+**Role:** Provide status updates and webhook callbacks.
+
+**Components:**
+
+1. **Status Endpoint:** `GET /upload/:uploadId/status`
+   - Returns current processing status and metadata
+   - Status values: `uploaded`, `processing`, `completed`, `failed`
+   - Includes: `rowsProcessed`, `rowsFailed`, `progress?`, `error?`, `startedAt`, `completedAt`
+
+2. **Webhook Service:**
+   - POST to user's `callbackUrl` when processing completes/fails
+   - Payload: `{ uploadId, status, rowsProcessed, rowsFailed?, error?, timestamp }`
+   - Retry mechanism: Exponential backoff (max 3 retries)
+   - Queue webhook delivery for async processing (BullMQ or similar)
+
+3. **Status Storage:**
+   - Store processing status in PostgreSQL or Redis
+   - Key: `uploadId`, TTL: 7 days (cleanup old statuses)
+   - Include all metadata for status endpoint
+
+**Implementation:**
+- Use Redis for status storage (fast, TTL support) or PostgreSQL (persistent)
+- Use BullMQ or similar queue for webhook delivery (retryable, async)
+- Validate callbackUrl format (must be HTTP/HTTPS)
+- Handle webhook failures gracefully (log, retry, don't block processing)
+
+### Module G: Infrastructure (Constraints)
 
 **Docker Compose Configuration:**
 
@@ -124,6 +165,7 @@ graph LR
 - **Object Storage:** Add MinIO service for local development (S3-compatible)
   - Ports: 9000 (API), 9001 (Console)
   - Persistent volume for object storage data
+- **Queue System:** Redis (shared with other services) for webhook delivery queue
 
 ## 5. Acceptance Criteria (The OOM Test)
 
@@ -151,3 +193,9 @@ graph LR
    - If processing fails, object remains in storage
    - Can retry processing via `/upload/:uploadId/retry` endpoint without re-uploading
    - Retry succeeds and processes all rows correctly
+
+4. **Notification System:**
+   - Status endpoint returns current processing status: `GET /upload/:uploadId/status`
+   - Webhook callback (if provided) receives POST when processing completes/fails
+   - Webhook retry mechanism handles temporary failures (max 3 retries)
+   - Status persists for 7 days for user reference

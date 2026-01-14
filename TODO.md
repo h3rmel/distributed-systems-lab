@@ -772,6 +772,49 @@ const logger = createLogger('live-dashboard');
   - [ ] Close database connections
   - [ ] Close any open file streams
 
+### 3.14 Notification System (Status Polling + Webhook Callbacks)
+- [ ] Create status storage service:
+  - [ ] Create `src/status/status.service.ts`:
+    - [ ] Use Redis for status storage (fast, TTL support)
+    - [ ] Store status: `{ uploadId, status, rowsProcessed, rowsFailed?, error?, startedAt, completedAt, callbackUrl? }`
+    - [ ] Set TTL: 7 days (auto-cleanup old statuses)
+    - [ ] Methods: `setStatus()`, `getStatus()`, `updateStatus()`
+- [ ] Create status endpoint:
+  - [ ] Create `src/routes/status.ts`:
+    - [ ] `GET /upload/:uploadId/status` endpoint
+    - [ ] Return: `{ uploadId, status, rowsProcessed, rowsFailed?, error?, startedAt, completedAt }`
+    - [ ] Handle 404 if uploadId not found
+- [ ] Update upload endpoint to accept callbackUrl:
+  - [ ] Modify `src/routes/upload.ts`:
+    - [ ] Accept optional `callbackUrl` in request body/form-data
+    - [ ] Validate callbackUrl format (must be HTTP/HTTPS URL)
+    - [ ] Store callbackUrl with upload metadata
+- [ ] Create webhook notification service:
+  - [ ] Create `src/notifications/webhook.service.ts`:
+    - [ ] Use BullMQ or similar queue for webhook delivery
+    - [ ] Method: `sendWebhook(callbackUrl, payload)` - queues webhook job
+    - [ ] Payload format: `{ uploadId, status, rowsProcessed, rowsFailed?, error?, timestamp }`
+  - [ ] Create webhook processor:
+    - [ ] Create `src/notifications/webhook.processor.ts`:
+      - [ ] Process webhook delivery jobs
+      - [ ] POST to user's callbackUrl
+      - [ ] Retry on failure (exponential backoff, max 3 retries)
+      - [ ] Log failures for monitoring
+- [ ] Integrate notifications into processing flow:
+  - [ ] Update `src/routes/process.ts`:
+    - [ ] Update status to 'processing' at start
+    - [ ] Track progress (rowsProcessed, rowsFailed) during processing
+    - [ ] Update status to 'completed' or 'failed' at end
+    - [ ] Trigger webhook notification if callbackUrl provided
+- [ ] Install dependencies:
+  - [ ] `pnpm add bullmq ioredis` (if not already installed for queue)
+  - [ ] `pnpm add axios` or use native `fetch` for webhook POST requests
+- [ ] Test notification system:
+  - [ ] Test status endpoint: `GET /upload/:uploadId/status` returns correct status
+  - [ ] Test webhook callback: Provide callbackUrl, verify POST received on completion
+  - [ ] Test webhook retry: Simulate callback endpoint failure, verify retries
+  - [ ] Test status persistence: Verify status available for 7 days
+
 ---
 
 ## Phase 4: Integration & Documentation
