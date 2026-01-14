@@ -788,13 +788,29 @@ const logger = createLogger('live-dashboard');
   - [ ] Stop Redis, verify BullMQ handles gracefully
   - [ ] Kill Ingestion API, verify Dashboard reconnects
 
-### 4.2 Documentation
+### 4.2 Documentation Organization ✅
+- [x] Consolidate documentation in `docs/` folder:
+  - [x] Move spec files from `specs/` to `docs/` folder
+  - [x] Create `docs/adr/` directory for Architecture Decision Records
+  - [x] Update all references to spec files in codebase
+  - [x] Update active context with new structure
+- [x] Create Architecture Decision Records (ADRs):
+  - [x] ADR-0001: Use FastifyAdapter over ExpressAdapter
+  - [x] ADR-0002: Queue-Based Asynchronous Processing
+  - [x] ADR-0003: Use Drizzle ORM over TypeORM/Prisma
+  - [x] ADR-0004: Use Zustand over React Context
+  - [x] ADR-0005: Use Object Storage for Stream API
+  - [x] ADR-0006: Use Postgres COPY Protocol
+  - [x] Create ADR README with index
+
+### 4.3 Project Documentation
 - [ ] Create root `README.md`:
   - [ ] Project overview (3 systems)
   - [ ] Architecture diagram
   - [ ] Prerequisites (Node 20+, Docker, pnpm)
   - [ ] Quick start guide
   - [ ] Environment variables reference
+  - [ ] Link to `docs/` folder for specifications and ADRs
 - [ ] Create per-project READMEs:
   - [ ] `apps/ingestion-api/README.md` - API endpoints, modules, testing
   - [ ] `apps/live-dashboard/README.md` - Components, performance patterns
@@ -803,7 +819,7 @@ const logger = createLogger('live-dashboard');
   - [ ] `packages/dto/README.md` - Type definitions
   - [ ] `packages/database/README.md` - Schema, migrations
 
-### 4.3 Scripts & Automation
+### 4.4 Scripts & Automation
 - [ ] Add root-level scripts to `package.json`:
   - [ ] `"dev": "docker compose up -d && pnpm --parallel --filter './apps/*' dev"`
   - [ ] `"build": "pnpm --recursive --filter './apps/*' build"`
@@ -815,7 +831,7 @@ const logger = createLogger('live-dashboard');
   - [ ] `seed-database.js` - Seed database with test data
   - [ ] `reset-dev.sh` - Reset development environment (drop DB, clear Redis)
 
-### 4.4 Performance Benchmarking
+### 4.5 Performance Benchmarking
 - [ ] Run all acceptance tests:
   - [ ] Ingestion API: K6 load test (500 VUs)
   - [ ] Dashboard: Freeze test (CPU < 70%)
