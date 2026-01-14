@@ -1,0 +1,26 @@
+{
+  "name": "stream-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.968.0",
+    "@aws-sdk/lib-storage": "^3.968.0",
+    "@distributed-systems-lab/database": "workspace:*",
+    "@fastify/multipart": "^9.3.0",
+    "fast-csv": "^5.0.5",
+    "fastify": "^5.6.2",
+    "minio": "^8.0.6",
+    "pg": "^8.16.3",
+    "pg-copy-streams": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.8",
+    "@types/pg": "^8.16.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented with comprehensive test coverage. Current: Phase 2 (Live Dashboard).
+- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented with comprehensive test coverage. Current: Phase 3 (Stream API) - switched order with Phase 2.
 
 ## 2. Monorepo Structure
 
@@ -159,15 +159,8 @@ distributed-systems-lab/
 - [x] Phase 1.11: Dockerfile and docker-compose integration ✅
 - [x] Phase 1.12: Unit Tests (97%+ coverage achieved) ✅
 
-### Phase 2: Live Dashboard (Current Focus)
-- [ ] Initialize Next.js 14 with App Router
-- [ ] Setup Zustand store for metrics
-- [ ] Implement Socket.io client with reconnection
-- [ ] Create ThroughputChart with throttled updates
-- [ ] Implement LiveLogStream with TanStack Virtual
-- [ ] Performance testing (Freeze Test)
-
-### Phase 3: Stream API (After Dashboard)
+### Phase 3: Stream API (Current Focus - Switched Order)
+- [x] Phase 3.1: Project Setup (in progress)
 - [ ] Setup Fastify with multipart support
 - [ ] Implement streaming CSV parser
 - [ ] Create validation Transform stream
@@ -175,6 +168,14 @@ distributed-systems-lab/
 - [ ] Add memory monitoring
 - [ ] OOM testing (5M rows in 512MB)
 - [ ] **NEW:** Notification system (status polling + webhook callbacks) - See Phase 3.14 in TODO.md
+
+### Phase 2: Live Dashboard (After Stream API)
+- [ ] Initialize Next.js 14 with App Router
+- [ ] Setup Zustand store for metrics
+- [ ] Implement Socket.io client with reconnection
+- [ ] Create ThroughputChart with throttled updates
+- [ ] Implement LiveLogStream with TanStack Virtual
+- [ ] Performance testing (Freeze Test)
 
 ## 6. Active Architecture Decisions
 
@@ -267,5 +268,5 @@ STREAM_API_PORT=3002
   - ✅ Unit tests: 97%+ coverage, 55 tests passing
   - ✅ Docker containerization complete
   
-**Current:** Phase 2 - Live Dashboard (Next.js 14 + Socket.io)  
-**Next:** Initialize Next.js 14 project with App Router
+**Current:** Phase 3 - Stream API (Node.js Streams + Fastify) - Switched order with Phase 2  
+**Next:** Initialize stream-api project with Fastify and multipart support
