@@ -27,7 +27,7 @@ distributed-systems-lab/
 │   ├── SPEC-INGESTION-API.md  (Source of Truth for Project 1)
 │   ├── SPEC-DASHBOARD.md      (Source of Truth for Project 2)
 │   ├── SPEC-STREAM-API.md     (Source of Truth for Project 3)
-│   └── adr/                   (Architecture Decision Records)
+│   └── adr/                   (Architecture Decision Records - 7 ADRs)
 ├── .cursor/rules/
 │   ├── mb-active-context.mdc
 │   ├── mb-commands.mdc
@@ -51,14 +51,26 @@ distributed-systems-lab/
 
 ### Source of Truth Hierarchy
 1. **Specifications** (`docs/SPEC-*.md`) - Business requirements and acceptance criteria
-2. **Architecture Decision Records** (`docs/adr/*.md`) - Documented architectural decisions
+2. **Architecture Decision Records** (`docs/adr/*.md`) - Documented architectural decisions (7 ADRs)
 3. **Memory Bank** (`.cursor/rules/mb-*.mdc`) - Technical patterns and current state
 4. **TODO.md** - Detailed implementation roadmap with checklists
 5. **Code Implementation** - Must align with specs, ADRs, Memory Bank, and TODO
 
+**Current ADRs:**
+- ADR-0001: FastifyAdapter over ExpressAdapter
+- ADR-0002: Queue-Based Asynchronous Processing
+- ADR-0003: Drizzle ORM over TypeORM/Prisma
+- ADR-0004: Zustand over React Context
+- ADR-0005: Object Storage for Stream API
+- ADR-0006: Postgres COPY Protocol
+- ADR-0007: Notification System for Stream API
+
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-01-11 | Docs | Consolidated documentation: Moved spec files to `docs/` folder, created 7 Architecture Decision Records (ADRs) |
+| 2026-01-11 | Feat | Added notification system to Stream API spec (status polling + webhook callbacks) |
+| 2026-01-11 | Docs | Updated SPEC-STREAM-API.md with object storage architecture and notification system |
 | 2026-01-11 | Test | Completed Phase 1.12: Added comprehensive unit test suite (11 test files, 55 tests, 97%+ coverage) |
 | 2026-01-11 | Cleanup | Removed unused mock classes (MockRedis, MockDatabase, MockQueue) from test/mocks/ |
 | 2026-01-10 | Docs | Added Phase 1.12 (Unit Tests) to roadmap |
@@ -162,6 +174,7 @@ distributed-systems-lab/
 - [ ] Implement Postgres COPY stream destination
 - [ ] Add memory monitoring
 - [ ] OOM testing (5M rows in 512MB)
+- [ ] **NEW:** Notification system (status polling + webhook callbacks) - See Phase 3.14 in TODO.md
 
 ## 6. Active Architecture Decisions
 
