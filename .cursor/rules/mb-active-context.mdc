@@ -23,10 +23,11 @@ distributed-systems-lab/
 │   ├── dto/               ✅ @distributed-systems-lab/dto
 │   ├── database/          ✅ @distributed-systems-lab/database
 │   └── eslint-config/     ✅ @distributed-systems-lab/eslint-config
-├── specs/
+├── docs/
 │   ├── SPEC-INGESTION-API.md  (Source of Truth for Project 1)
 │   ├── SPEC-DASHBOARD.md      (Source of Truth for Project 2)
-│   └── SPEC-STREAM-API.md     (Source of Truth for Project 3)
+│   ├── SPEC-STREAM-API.md     (Source of Truth for Project 3)
+│   └── adr/                   (Architecture Decision Records)
 ├── .cursor/rules/
 │   ├── mb-active-context.mdc
 │   ├── mb-commands.mdc
@@ -49,10 +50,11 @@ distributed-systems-lab/
 | `live-dashboard` | Real-time Dashboard |
 
 ### Source of Truth Hierarchy
-1. **Specifications** (`specs/SPEC-*.md`) - Business requirements and acceptance criteria
-2. **Memory Bank** (`.cursor/rules/mb-*.mdc`) - Technical patterns and current state
-3. **TODO.md** - Detailed implementation roadmap with checklists
-4. **Code Implementation** - Must align with specs, Memory Bank, and TODO
+1. **Specifications** (`docs/SPEC-*.md`) - Business requirements and acceptance criteria
+2. **Architecture Decision Records** (`docs/adr/*.md`) - Documented architectural decisions
+3. **Memory Bank** (`.cursor/rules/mb-*.mdc`) - Technical patterns and current state
+4. **TODO.md** - Detailed implementation roadmap with checklists
+5. **Code Implementation** - Must align with specs, ADRs, Memory Bank, and TODO
 
 ## 3. Recent Changes
 | Date | Type | Description |
