@@ -65,6 +65,26 @@ services:
         condition: service_healthy
     networks:
       - distributed-lab-network
+  minio:
+    image: minio/minio:latest
+    container_name: distributed-lab-minio
+    restart: unless-stopped
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - ./.docker/minio-data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - distributed-lab-network
 
 networks:
   distributed-lab-network:

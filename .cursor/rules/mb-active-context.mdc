@@ -68,6 +68,10 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-01-28 | Feat | Phase 3.3: Created Object Storage Service (storage, upload, download, cleanup services) |
+| 2026-01-28 | Feat | Phase 3.2: Created Fastify server with multipart support and health endpoint |
+| 2026-01-28 | Feat | Phase 3.1: Initialized stream-api project with ESM, dependencies, tsconfig |
+| 2026-01-28 | Infra | Added MinIO service to docker-compose.yaml (S3-compatible object storage) |
 | 2026-01-11 | Docs | Consolidated documentation: Moved spec files to `docs/` folder, created 7 Architecture Decision Records (ADRs) |
 | 2026-01-11 | Feat | Added notification system to Stream API spec (status polling + webhook callbacks) |
 | 2026-01-11 | Docs | Updated SPEC-STREAM-API.md with object storage architecture and notification system |
@@ -130,11 +134,15 @@ distributed-systems-lab/
 - **Dependencies**: Requires Project 1 WebSocket gateway
 
 ### Project 3: Stream API (`apps/stream-api`)
-- **Status**: Not started
-- **Tech Stack**: Node.js 20 Streams + Fastify + pg-copy-streams
+- **Status**: **🚧 IN PROGRESS** - Phases 3.1-3.3 complete
+- **Tech Stack**: Node.js 20 Streams + Fastify + pg-copy-streams + S3/MinIO
 - **Key Features**: Memory-efficient CSV processing, backpressure handling, bulk inserts
 - **Target KPIs**: Process 2GB+ files in 512MB RAM, > 10k rows/sec
 - **Dependencies**: Requires shared database module
+- **Completed**:
+  - Phase 3.1: Project setup (ESM, dependencies, tsconfig)
+  - Phase 3.2: Fastify server with multipart support
+  - Phase 3.3: Object Storage Service (S3/MinIO integration)
 
 ### Shared Packages
 | Package | Status | Description |
@@ -160,14 +168,16 @@ distributed-systems-lab/
 - [x] Phase 1.12: Unit Tests (97%+ coverage achieved) ✅
 
 ### Phase 3: Stream API (Current Focus - Switched Order)
-- [x] Phase 3.1: Project Setup (in progress)
-- [ ] Setup Fastify with multipart support
-- [ ] Implement streaming CSV parser
-- [ ] Create validation Transform stream
-- [ ] Implement Postgres COPY stream destination
-- [ ] Add memory monitoring
-- [ ] OOM testing (5M rows in 512MB)
-- [ ] **NEW:** Notification system (status polling + webhook callbacks) - See Phase 3.14 in TODO.md
+- [x] Phase 3.1: Project Setup (ESM, dependencies, tsconfig) ✅
+- [x] Phase 3.2: Fastify Server with multipart support ✅
+- [x] Phase 3.3: Object Storage Service (S3/MinIO) ✅
+- [ ] Phase 3.4: Upload Endpoint (HTTP → Object Storage)
+- [ ] Phase 3.5: Processing Endpoint (Object Storage → Database)
+- [ ] Phase 3.6-3.9: Transform Streams & Pipeline Integration
+- [ ] Phase 3.10: Memory Monitoring
+- [ ] Phase 3.11: Docker Configuration (512MB limit)
+- [ ] Phase 3.12: OOM Testing (5M rows in 512MB)
+- [ ] Phase 3.14: Notification System (status polling + webhook callbacks)
 
 ### Phase 2: Live Dashboard (After Stream API)
 - [ ] Initialize Next.js 14 with App Router
@@ -199,8 +209,9 @@ distributed-systems-lab/
 ### Infrastructure (Configured)
 - **Database**: PostgreSQL 16 Alpine at `localhost:5432` (Docker)
 - **Queue**: Redis 7 Alpine at `localhost:6379` (Docker)
+- **Object Storage**: MinIO at `localhost:9000` (S3-compatible, console at 9001)
 - **Network**: `distributed-lab-network` (Docker bridge)
-- **Data Persistence**: `.docker/postgres-data`, `.docker/redis-data`
+- **Data Persistence**: `.docker/postgres-data`, `.docker/redis-data`, `.docker/minio-data`
 
 ### Port Assignments
 | Service | Port |
@@ -210,6 +221,8 @@ distributed-systems-lab/
 | Stream API | 3002 |
 | PostgreSQL | 5432 |
 | Redis | 6379 |
+| MinIO API | 9000 |
+| MinIO Console | 9001 |
 
 ### Testing Strategy
 - **Ingestion API**: 
@@ -268,5 +281,5 @@ STREAM_API_PORT=3002
   - ✅ Unit tests: 97%+ coverage, 55 tests passing
   - ✅ Docker containerization complete
   
-**Current:** Phase 3 - Stream API (Node.js Streams + Fastify) - Switched order with Phase 2  
-**Next:** Initialize stream-api project with Fastify and multipart support
+**Current:** Phase 3 - Stream API (Phases 3.1-3.3 complete)  
+**Next:** Phase 3.4 - Upload Endpoint (HTTP → Object Storage streaming)
