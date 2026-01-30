@@ -1,5 +1,8 @@
+import 'dotenv/config';
 import fastify from "fastify";
 import multipart from "@fastify/multipart";
+import { uploadRoutes } from "./routes/upload";
+import { processRoutes } from "./routes/process";
 
 const app = fastify({ logger: true });
 
@@ -12,6 +15,9 @@ await app.register(multipart, {
 app.get('/health', async () => {
   return { status: 'ok' };
 })
+
+app.register(uploadRoutes);
+app.register(processRoutes);
 
 const start = async () => {
   try {
