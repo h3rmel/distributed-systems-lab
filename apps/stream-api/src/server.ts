@@ -3,6 +3,7 @@ import fastify from "fastify";
 import multipart from "@fastify/multipart";
 import { uploadRoutes } from "./routes/upload";
 import { processRoutes } from "./routes/process";
+import { startMemoryMonitoring } from './monitoring/memory';
 
 const app = fastify({ logger: true });
 
@@ -24,6 +25,8 @@ const start = async () => {
     const port = Number(process.env.PORT) || 3002;
     
     await app.listen({ port, host: '0.0.0.0' });
+
+    startMemoryMonitoring();
   } catch (error) {
     app.log.error(error);
     process.exit(1);
