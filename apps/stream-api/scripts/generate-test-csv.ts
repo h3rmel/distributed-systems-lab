@@ -35,10 +35,10 @@ async function generateCSV(): Promise<void> {
     }
 
     // Log progress every 500,000 rows
-    if (i > 0 &&i % 500_000 === 0) {
+    if (i > 0 && i % 500_000 === 0) {
       const percent = ((i / ROW_COUNT) * 100).toFixed(1);
       
-      console.log(`Progrss: ${percent}% (${i.toLocaleString()} rows)`);
+      console.log(`Progress: ${percent}% (${i.toLocaleString()} rows)`);
     }
   }
 
@@ -48,7 +48,7 @@ async function generateCSV(): Promise<void> {
   })
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(`Done! Generated ${ROW_COUNT.toLocaleString} rows in ${elapsed} seconds`);
+  console.log(`Done! Generated ${ROW_COUNT.toLocaleString()} rows in ${elapsed} seconds`);
 }
 
 generateCSV().catch((error: unknown) => {

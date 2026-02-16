@@ -46,4 +46,5 @@ Thumbs.db
 # Misc
 *.tsbuildinfo
 
-
+# Specific mock files
+mocks/large-test.csv
