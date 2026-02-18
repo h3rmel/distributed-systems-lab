@@ -1,3 +1,0 @@
-provider,eventId,timestamp,data
-stripe,evt_001,2024-01-28T10:00:00Z,{"amount":100}
-paypal,evt_002,2024-01-28T10:01:00Z,{"amount":200}

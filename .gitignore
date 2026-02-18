@@ -47,4 +47,4 @@ Thumbs.db
 *.tsbuildinfo
 
 # Specific mock files
-mocks/large-test.csv
+apps/stream-api/mocks/*.csv
