@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { uploadFileToS3 } from '../storage/index.js';
+import { createStatus } from '../notifications/status.service.js';
 
 /**
  * Upload routes for CSV file ingestion.
@@ -8,11 +9,22 @@ import { uploadFileToS3 } from '../storage/index.js';
  */
 export async function uploadRoutes(app: FastifyInstance): Promise<void> {
   /**
-   * POST /upload
+   * POST /upload?callbackUrl=https://example.com/web
    * Accepts multipart file upload and streams directly to S3.
    * Returns 202 Accepted with uploadId for tracking.
    */
-  app.post('/upload', async (request, reply) => {
+  app.post<{
+    Querystring: { callbackUrl?: string };
+  }>('/upload', async (request, reply) => {
+    const { callbackUrl } = request.query;
+
+    // Validate callbackUrl format if provided
+    if (callbackUrl && !/^https?:\/\/.+/.test(callbackUrl)) {
+      return reply.status(400).send({
+        error: 'Invalid callbackUrl: must be a valid HTTP/HTTPS URL',
+      });
+    }
+
     // 1. Get file from multipart request
     const data = await request.file();
 
@@ -28,7 +40,10 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
       // 3. Stream HTTP file directly to S3 (no disk, no memory)
       const result = await uploadFileToS3(data.file, objectKey);
 
-      // 4. Return 202 Accepted with tracking info
+      // 4. Create initial status record
+      await createStatus(uploadId, objectKey, callbackUrl);
+
+      // 5. Return 202 Accepted with tracking info
       return reply.status(202).send({
         uploadId,
         objectKey,
@@ -37,6 +52,7 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch (error) {
       request.log.error(error, 'Upload failed');
+
       return reply.status(500).send({
         error: 'Upload failed',
         message: error instanceof Error ? error.message : 'Unknown error',

@@ -16,9 +16,11 @@
     "@distributed-systems-lab/database": "workspace:*",
     "@fastify/multipart": "^9.3.0",
     "@types/pg-copy-streams": "^1.2.5",
+    "bullmq": "^5.66.4",
     "dotenv": "^17.2.3",
     "fast-csv": "^5.0.5",
     "fastify": "^5.6.2",
+    "ioredis": "^5.9.1",
     "minio": "^8.0.6",
     "pg": "^8.16.3",
     "pg-copy-streams": "^7.0.0"

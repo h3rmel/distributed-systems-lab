@@ -111,10 +111,15 @@ services:
       S3_REGION: us-east-1
       # Memory limit for Node.js (leave headroom below 512MB)
       NODE_OPTIONS: --max-old-space-size=450
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     depends_on:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     deploy:
       resources:

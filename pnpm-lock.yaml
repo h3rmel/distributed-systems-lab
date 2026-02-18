@@ -186,6 +186,9 @@ importers:
       '@types/pg-copy-streams':
         specifier: ^1.2.5
         version: 1.2.5
+      bullmq:
+        specifier: ^5.66.4
+        version: 5.66.4
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -195,6 +198,9 @@ importers:
       fastify:
         specifier: ^5.6.2
         version: 5.6.2
+      ioredis:
+        specifier: ^5.9.1
+        version: 5.9.1
       minio:
         specifier: ^8.0.6
         version: 8.0.6
