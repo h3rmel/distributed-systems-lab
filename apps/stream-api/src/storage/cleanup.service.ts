@@ -1,5 +1,5 @@
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client, getBucket } from './storage.service.js';
+import { s3Client, getBucket } from './storage.service';
 
 /**
  * Deletes a file from S3/MinIO.

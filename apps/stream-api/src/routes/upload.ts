@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import { uploadFileToS3 } from '../storage/index.js';
-import { createStatus } from '../notifications/status.service.js';
+import { uploadFileToS3 } from '#/storage';
+import { createStatus } from '#/notifications/status.service';
 
 /**
  * Upload routes for CSV file ingestion.

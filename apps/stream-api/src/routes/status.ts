@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { getStatus } from '../notifications/status.service';
+import { getStatus } from '#/notifications/status.service';
 
 /**
  * Status polling routes for upload processing lifecycle.

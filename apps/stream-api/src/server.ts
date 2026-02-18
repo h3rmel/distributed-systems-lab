@@ -1,11 +1,11 @@
 import 'dotenv/config';
 import fastify from 'fastify';
 import multipart from '@fastify/multipart';
-import { uploadRoutes } from './routes/upload';
-import { processRoutes } from './routes/process';
-import { startMemoryMonitoring } from './monitoring/memory';
-import { statusRoutes } from './routes/status';
-import { closeWebhookQueue, disconnectRedis, closeWebhookWorker } from './notifications';
+import { uploadRoutes } from '#/routes/upload';
+import { processRoutes } from '#/routes/process';
+import { startMemoryMonitoring } from '#/monitoring/memory';
+import { statusRoutes } from '#/routes/status';
+import { closeWebhookQueue, disconnectRedis, closeWebhookWorker } from '#/notifications';
 
 const app = fastify({ logger: true });
 

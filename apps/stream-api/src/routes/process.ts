@@ -1,13 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import { parse } from 'fast-csv';
 import { pipeline } from 'node:stream/promises';
-import { downloadFileFromS3, deleteFileFromS3 } from '../storage';
-import { createPostgresWriteStream } from '../streams/postgres-writer';
-import { ValidationTransform } from '../transforms/validation';
-import { FormatterTransform } from '../transforms/formatter';
-import { getStatus, updateStatus } from '../notifications/status.service';
-import { WebhookCallbackPayload } from '../notifications/types';
-import { enqueueWebhook } from '../notifications/webhook.queue';
+import { downloadFileFromS3, deleteFileFromS3 } from '#/storage';
+import { createPostgresWriteStream } from '#/streams/postgres-writer';
+import { ValidationTransform } from '#/transforms/validation';
+import { FormatterTransform } from '#/transforms/formatter';
+import { getStatus, updateStatus } from '#/notifications/status.service';
+import { WebhookCallbackPayload } from '#/notifications/types';
+import { enqueueWebhook } from '#/notifications/webhook.queue';
 
 /**
  * Processing routes for CSV file ingestion.
