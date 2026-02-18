@@ -32,6 +32,7 @@
 The system uses a two-stage pipeline to handle network reliability and enable retry mechanisms:
 
 **Stage 1: HTTP → Object Storage (Upload)**
+
 ```mermaid
 graph LR
     A[Client Upload 2GB CSV] -->|HTTP Stream| B(Fastify Multipart)
@@ -40,6 +41,7 @@ graph LR
 ```
 
 **Stage 2: Object Storage → Database (Processing)**
+
 ```mermaid
 graph LR
     A[S3/MinIO Object Storage] -->|Streaming Download| B[CSV Parser Transform]
@@ -50,6 +52,7 @@ graph LR
 ```
 
 **Complete Flow:**
+
 1. Client uploads file via HTTP POST (optionally provides `callbackUrl`)
 2. Fastify streams upload directly to S3/MinIO (no local disk)
 3. Return HTTP 202 Accepted immediately after upload completes with `uploadId`
@@ -59,6 +62,7 @@ graph LR
 7. Delete object from S3 after successful processing
 
 **Benefits:**
+
 - **Network Reliability:** Upload completes before processing starts
 - **Retry Mechanism:** Can retry processing without re-uploading entire file
 - **No Local Disk:** Uses object storage instead of container filesystem
@@ -80,6 +84,7 @@ graph LR
 6. Return HTTP 202 Accepted immediately after upload completes with `{ uploadId, status: 'uploaded' }`
 
 **Key Implementation:**
+
 - Use `Upload` class from `@aws-sdk/lib-storage` for streaming uploads
 - No local disk writes - stream directly from HTTP to S3
 - Handle upload errors gracefully (cleanup object on failure)
@@ -102,6 +107,7 @@ graph LR
 7. Return processing result (success/failure with row count)
 
 **Status Tracking:**
+
 - Store processing status: `uploaded` → `processing` → `completed` | `failed`
 - Include metadata: `rowsProcessed`, `rowsFailed`, `error?`, `startedAt`, `completedAt`
 
@@ -125,6 +131,7 @@ graph LR
 4. **Retry Service:** Enable retry of failed processing jobs
 
 **Implementation:**
+
 - Use `@aws-sdk/client-s3` for AWS S3
 - Use `minio` client for local development (S3-compatible)
 - Support both production (S3) and development (MinIO) environments
@@ -152,6 +159,7 @@ graph LR
    - Include all metadata for status endpoint
 
 **Implementation:**
+
 - Use Redis for status storage (fast, TTL support) or PostgreSQL (persistent)
 - Use BullMQ or similar queue for webhook delivery (retryable, async)
 - Validate callbackUrl format (must be HTTP/HTTPS)

@@ -1,6 +1,6 @@
-import { Job, Worker } from "bullmq";
-import { WebhookJobData } from "./types";
-import { getRedisConfig } from "./redis.client";
+import { Job, Worker } from 'bullmq';
+import { WebhookJobData } from './types';
+import { getRedisConfig } from './redis.client';
 
 /** Queue name shared between worker and queue service. */
 export const WEBHOOK_QUEUE_NAME = 'webhook-delivery';
@@ -22,9 +22,7 @@ async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error(
-      `Webhook delivery failed: ${response.status} ${response.statusText}`,
-    );
+    throw new Error(`Webhook delivery failed: ${response.status} ${response.statusText}`);
   }
 
   console.log(`Webhook delivered for uploadId=${uploadId}`);
@@ -34,25 +32,19 @@ async function processWebhookJob(job: Job<WebhookJobData>): Promise<void> {
  * BullMQ Worker that consumes webhook delivery jobs.
  * Runs in-process with its own Redis connection.
  */
-const webhookWorker = new Worker<WebhookJobData>(
-  WEBHOOK_QUEUE_NAME,
-  processWebhookJob,
-  {
-    connection: getRedisConfig(),
-    concurrency: 1,
-    removeOnComplete: { count: 100 },
-    removeOnFail: { count: 500 },
-  },
-);
+const webhookWorker = new Worker<WebhookJobData>(WEBHOOK_QUEUE_NAME, processWebhookJob, {
+  connection: getRedisConfig(),
+  concurrency: 1,
+  removeOnComplete: { count: 100 },
+  removeOnFail: { count: 500 },
+});
 
 webhookWorker.on('completed', (job) => {
   console.log(`Webhook job ${job?.id} completed for uploadId=${job?.data.uploadId}`);
 });
 
 webhookWorker.on('failed', (job, error) => {
-  console.log(
-    `Webhook job ${job?.id} failed (attempt ${job?.attemptsMade}): ${error.message}`,
-  )
+  console.log(`Webhook job ${job?.id} failed (attempt ${job?.attemptsMade}): ${error.message}`);
 });
 
 /**

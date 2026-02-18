@@ -1,6 +1,6 @@
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { Readable } from "node:stream";
-import { getBucket, s3Client } from "./storage.service";
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { Readable } from 'node:stream';
+import { getBucket, s3Client } from './storage.service';
 
 /**
  * Downloads a file from S3/MinIO as a readable stream.

@@ -1,11 +1,11 @@
 /**
  * Shared TypeScript type definitions for Distributed Systems Lab
- * 
+ *
  * This package provides type-safe interfaces for:
  * - Webhook data structures
  * - WebSocket events
  * - API responses
- * 
+ *
  * @packageDocumentation
  */
 

@@ -61,7 +61,7 @@ export default function () {
   const eventId = `evt_${randomString(12)}`; // Unique ID for Idempotency check
   /** @type {string} */
   const customerId = `cus_${randomString(8)}`;
-  
+
   /** @type {WebhookPayload} */
   const payload = {
     eventId,
@@ -84,7 +84,7 @@ export default function () {
   // API endpoint (port 3001 for ingestion-api)
   /** @type {string} */
   const url = 'http://localhost:3001/webhooks/stripe';
-  
+
   /** @type {Response} */
   const res = http.post(url, JSON.stringify(payload), params);
 

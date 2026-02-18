@@ -1,5 +1,5 @@
-import { createWriteStream } from "node:fs";
-import { randomUUID } from "node:crypto";
+import { createWriteStream } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 
 const ROW_COUNT = 5_000_000;
@@ -41,7 +41,7 @@ async function generateCSV(): Promise<void> {
     // Log progress every 500,000 rows
     if (i > 0 && i % 500_000 === 0) {
       const percent = ((i / ROW_COUNT) * 100).toFixed(1);
-      
+
       console.log(`Progress: ${percent}% (${i.toLocaleString()} rows)`);
     }
   }
@@ -49,7 +49,7 @@ async function generateCSV(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     stream.end(() => resolve());
     stream.on('error', reject);
-  })
+  });
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
   console.log(`Done! Generated ${ROW_COUNT.toLocaleString()} rows in ${elapsed} seconds`);
@@ -58,4 +58,4 @@ async function generateCSV(): Promise<void> {
 generateCSV().catch((error: unknown) => {
   console.error('Generation failed: ', error);
   process.exit(1);
-})
+});

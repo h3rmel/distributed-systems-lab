@@ -25,8 +25,8 @@ export async function createPostgresWriteStream(): Promise<{
   // COPY command matching webhook_events table schema
   const copyStream = client.query(
     copyFrom.from(
-      `COPY webhook_events (provider, event_id, timestamp, data) FROM STDIN WITH (FORMAT csv)`
-    )
+      `COPY webhook_events (provider, event_id, timestamp, data) FROM STDIN WITH (FORMAT csv)`,
+    ),
   );
 
   // Cleanup function to release client back to pool

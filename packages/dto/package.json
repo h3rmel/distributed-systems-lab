@@ -9,6 +9,10 @@
     "build": "tsc",
     "clean": "rm -rf dist"
   },
-  "keywords": ["typescript", "types", "dto"],
+  "keywords": [
+    "typescript",
+    "types",
+    "dto"
+  ],
   "license": "MIT"
 }

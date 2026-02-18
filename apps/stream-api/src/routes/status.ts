@@ -1,5 +1,5 @@
-import { FastifyInstance } from "fastify";
-import { getStatus } from "../notifications/status.service";
+import { FastifyInstance } from 'fastify';
+import { getStatus } from '../notifications/status.service';
 
 /**
  * Status polling routes for upload processing lifecycle.
@@ -20,11 +20,11 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
     if (!record) {
       return reply.status(404).send({
         error: 'Upload not found',
-      })
+      });
     }
 
     const { callbackUrl, ...status } = record;
 
     return reply.status(200).send(status);
-  })
+  });
 }

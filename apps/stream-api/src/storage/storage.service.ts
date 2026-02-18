@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { S3Client } from '@aws-sdk/client-s3';
 
 /**
  * Creates an S3 client configured for either AWS S3 or MinIO (local dev).
@@ -34,4 +34,4 @@ export const getBucket = () => {
   }
 
   return bucket;
-}
+};

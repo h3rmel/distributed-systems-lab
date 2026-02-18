@@ -1,5 +1,5 @@
-import { Transform, TransformCallback } from "node:stream";
-import { ValidatedRow } from "./validation";
+import { Transform, TransformCallback } from 'node:stream';
+import { ValidatedRow } from './validation';
 
 /**
  * Transform stream that converts validated rows to CSV format
@@ -12,11 +12,7 @@ export class FormatterTransform extends Transform {
     super({ objectMode: true, highWaterMark: 100 });
   }
 
-  _transform(
-    row: ValidatedRow,
-    _encoding: BufferEncoding,
-    callback: TransformCallback,
-  ): void {
+  _transform(row: ValidatedRow, _encoding: BufferEncoding, callback: TransformCallback): void {
     // Escape data field for CSV (handle quotes and special chars)
     const escapedData = this.escapeForCsv(row.data);
 

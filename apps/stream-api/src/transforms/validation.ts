@@ -1,4 +1,4 @@
-import { Transform, TransformCallback } from "node:stream";
+import { Transform, TransformCallback } from 'node:stream';
 
 /**
  * Represents a parsed CSV row before validation.
@@ -56,12 +56,12 @@ export class ValidationTransform extends Transform {
 
   _flush(callback: TransformCallback): void {
     console.log(
-      `Validation complete: ${this.rowCount} rows processed, ${this.invalidCount} invalid`
+      `Validation complete: ${this.rowCount} rows processed, ${this.invalidCount} invalid`,
     );
     callback();
   }
 
-  getStats(): {total: number, invalid: number} {
-    return { total: this.rowCount, invalid: this.invalidCount};
+  getStats(): { total: number; invalid: number } {
+    return { total: this.rowCount, invalid: this.invalidCount };
   }
 }

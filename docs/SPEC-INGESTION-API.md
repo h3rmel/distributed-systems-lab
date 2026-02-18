@@ -1,11 +1,13 @@
 # Webhook Ingestor's spec
 
 ## 1. Project Manifesto & Goals
+
 **Project Name:** `webhook-ingestor-enterprise`
 **Type:** High-Throughput Event Ingestion
 **System Objective:** Engineer a fault-tolerant API gateway using Enterprise Standards (NestJS) capable of handling 10k+ requests/second, ensuring maintainability and scalability.
 
 ### Primary KPIs:
+
 1. **Availability:** 99.99% uptime.
 2. **Architecture:** Strict Modular Architecture (Separation of Concerns).
 3. **Performance:** NestJS configured with FastifyAdapter (Not Express).
@@ -80,37 +82,47 @@ graph LR
 
 **Role:** Ingress point.
 **Components:**
+
 1. DTO (`CreateWebhookDto`): Defines the expected payload structure using decorators (e.g., `@IsString()`, `@IsNotEmpty()`).
 2. Controller:
-  - Endpoint: POST `/webhooks/:provider`.
-  - Use `FastifyRequest` for low-level access if needed.
-  - Return type: `void` (handled by Fastify reply) or `{ accepted: true, jobId }`.
+
+- Endpoint: POST `/webhooks/:provider`.
+- Use `FastifyRequest` for low-level access if needed.
+- Return type: `void` (handled by Fastify reply) or `{ accepted: true, jobId }`.
+
 3. Service: Responsible only for injecting the Queue and adding the job.
 
 ### Module B: `WorkerModule` (Processor Layer)
 
 **Role:** Asynchronous processing.
 **Components:**
+
 1. **Processor** (`@Processor('webhooks')`):
-  - Method `@Process('ingest')`.
-  - Logic: Idempotency Check -> DB Insert -> Ack.
+
+- Method `@Process('ingest')`.
+- Logic: Idempotency Check -> DB Insert -> Ack.
+
 2. **Idempotency:** Implement a `RedisService` or use standard caching to check if `job.data.eventId` was already processed.
-  - **CRITICAL:** Set a TTL (e.g., 24h) for these keys to prevent Redis memory leaks.
+
+- **CRITICAL:** Set a TTL (e.g., 24h) for these keys to prevent Redis memory leaks.
 
 ### Module C: `HealthModule` (Ops Layer)
 
 **Role:** K8s Liveness & Readiness Probes.
 **Components:**
+
 1. **Terminus:** Use `@nestjs/terminus` to expose the endpoint `GET /health`.
 2. **Checks:**
-  - **DB Health:** Ping on Postgres (if fails, the pod will restart).
-  - **Redis Health:** Ping on Redis.
-  - **Memory Heap:** Check that we are not exceeding the RAM limit.
+
+- **DB Health:** Ping on Postgres (if fails, the pod will restart).
+- **Redis Health:** Ping on Redis.
+- **Memory Heap:** Check that we are not exceeding the RAM limit.
 
 ### Module D: `SharedModule` (Kernel Layer)
 
 **Role:** Type Safety & Utilities.
 **Components:**
+
 1. **Interfaces:** Export the `WebhookJobData` interface here. Both the `WebhookModule` (which produces the data) and the `WorkerModule` (which consumes it) must import this interface from this module to ensure that the data contract is identical.
 2. **Constants:** Queue names ('webhooks') and injection tokens.
 
@@ -130,7 +142,7 @@ graph LR
 
 ### Phase 4: API Implementation (Controller + DTO)
 
-> "Implement the `WebhookController`. 1. Create a `CreateWebhookDto` using `class-validator`. 2. In the controller, inject the Queue. 3. The POST endpoint must validate the DTO, add a job to BullMQ, and return 202 immediately." 
+> "Implement the `WebhookController`. 1. Create a `CreateWebhookDto` using `class-validator`. 2. In the controller, inject the Queue. 3. The POST endpoint must validate the DTO, add a job to BullMQ, and return 202 immediately."
 
 ### Phase 5: Processor Logic
 
@@ -147,8 +159,9 @@ This section defines the "Definition of Done". The project is only considered co
 1. Start the application: `npm run start:dev`.
 2. Inspect terminal logs.
 3. **Pass Condition:** You must see specific Fastify initialization logs.
-  - **Success:** `[NestFactory] Starting Nest application...` followed by logs indicating `FastifyAdapter` or implicit Fastify behavior.
-  - **Error:** If you see `ExpressAdapter` or references to `body-parser`.
+
+- **Success:** `[NestFactory] Starting Nest application...` followed by logs indicating `FastifyAdapter` or implicit Fastify behavior.
+- **Error:** If you see `ExpressAdapter` or references to `body-parser`.
 
 ### 6.2 Architecture Integrity Check
 
@@ -171,7 +184,7 @@ k6 run load-test.js
 
 - **Throughput:** System must handle 500 Virtual Users (VUs) simultaneously.
 - **Error Rate:** HTTP Failed requests must be **< 1%** (ideally 0%).
-- **Latency (P95):** API Response (202 Accepted) must be **< 100ms**. Note: *We measure ingestion speed, not processing speed*.
+- **Latency (P95):** API Response (202 Accepted) must be **< 100ms**. Note: _We measure ingestion speed, not processing speed_.
 - **Data Consistency:** `Total Requests Sent (K6)` == `Rows in Postgres`.
 
 ### Appendix: The Load Script (`load-test.js`)
@@ -185,12 +198,12 @@ import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
 export const options = {
   stages: [
-    { duration: '10s', target: 50 },  // Warm up
-    { duration: '1m', target: 500 },  // ⚠️ STRESS SPIKE: 500 concurrent users
-    { duration: '10s', target: 0 },   // Cool down
+    { duration: '10s', target: 50 }, // Warm up
+    { duration: '1m', target: 500 }, // ⚠️ STRESS SPIKE: 500 concurrent users
+    { duration: '10s', target: 0 }, // Cool down
   ],
   thresholds: {
-    http_req_failed: ['rate<0.01'],   // Max 1% errors allowed
+    http_req_failed: ['rate<0.01'], // Max 1% errors allowed
     http_req_duration: ['p(95)<100'], // 95% of requests must accept in under 100ms
   },
 };
@@ -205,7 +218,7 @@ export default function () {
       amount: Math.floor(Math.random() * 10000),
       currency: 'brl',
       customer_id: `cus_${randomString(8)}`,
-      status: 'succeeded'
+      status: 'succeeded',
     },
   });
 
@@ -224,6 +237,6 @@ export default function () {
   });
 
   // Pacing: Random sleep to simulate real traffic variance
-  sleep(0.1); 
+  sleep(0.1);
 }
 ```

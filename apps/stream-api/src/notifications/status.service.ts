@@ -1,5 +1,5 @@
-import { redis } from "./redis.client";
-import { JobStatusRecord } from "./types";
+import { redis } from './redis.client';
+import { JobStatusRecord } from './types';
 
 const STATUS_KEY_PREFIX = 'status:';
 const STATUS_TTL_SECONDS = 604_800; // 7 days
@@ -15,7 +15,11 @@ function buildKey(uploadId: string): string {
  * Creates initial job status after successful S3 upload.
  * Sets TTL of 7 days for automatic cleanup.
  */
-export async function createStatus(uploadId: string, objectKey: string, callbackUrl?: string): Promise<JobStatusRecord> {
+export async function createStatus(
+  uploadId: string,
+  objectKey: string,
+  callbackUrl?: string,
+): Promise<JobStatusRecord> {
   const record: JobStatusRecord = {
     uploadId,
     status: 'uploaded',
@@ -32,13 +36,15 @@ export async function createStatus(uploadId: string, objectKey: string, callback
 /**
  * Updates and existing job status record.
  * Merges partial update into current record and refreshes TTL.
- * 
+ *
  * @throws Error if uploadId not exist in Redis.
  */
-export async function updateStatus(uploadId: string, update: Partial<JobStatusRecord>): Promise<JobStatusRecord> {
+export async function updateStatus(
+  uploadId: string,
+  update: Partial<JobStatusRecord>,
+): Promise<JobStatusRecord> {
   const key = buildKey(uploadId);
   const raw = await redis.get(key);
-
 
   if (!raw) {
     throw new Error(`Status record not found for uploadId: ${uploadId}`);

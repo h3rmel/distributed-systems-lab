@@ -1,13 +1,13 @@
-import { FastifyInstance } from "fastify";
-import { parse } from "fast-csv";
-import { pipeline } from "node:stream/promises";
-import { downloadFileFromS3, deleteFileFromS3 } from "../storage";
-import { createPostgresWriteStream } from "../streams/postgres-writer";
-import { ValidationTransform } from "../transforms/validation";
-import { FormatterTransform } from "../transforms/formatter";
-import { getStatus, updateStatus } from "../notifications/status.service";
-import { WebhookCallbackPayload } from "../notifications/types";
-import { enqueueWebhook } from "../notifications/webhook.queue";
+import { FastifyInstance } from 'fastify';
+import { parse } from 'fast-csv';
+import { pipeline } from 'node:stream/promises';
+import { downloadFileFromS3, deleteFileFromS3 } from '../storage';
+import { createPostgresWriteStream } from '../streams/postgres-writer';
+import { ValidationTransform } from '../transforms/validation';
+import { FormatterTransform } from '../transforms/formatter';
+import { getStatus, updateStatus } from '../notifications/status.service';
+import { WebhookCallbackPayload } from '../notifications/types';
+import { enqueueWebhook } from '../notifications/webhook.queue';
 
 /**
  * Processing routes for CSV file ingestion.
@@ -23,117 +23,111 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
     Params: { uploadId: string };
   }>('/upload/:uploadId/process', async (request, reply) => {
     const { uploadId } = request.params;
-      const objectKey = `uploads/${uploadId}.csv`;
+    const objectKey = `uploads/${uploadId}.csv`;
 
-      let pgCleanup: (() => Promise<void>) | null = null;
+    let pgCleanup: (() => Promise<void>) | null = null;
 
-      try {
-        // 1. Update status to processing
-        await updateStatus(uploadId, {
-          status: 'processing',
-          startedAt: new Date().toISOString(),
-        });
-        
-        // 2. Download file stream from S3
-        const s3Stream = await downloadFileFromS3(objectKey);
+    try {
+      // 1. Update status to processing
+      await updateStatus(uploadId, {
+        status: 'processing',
+        startedAt: new Date().toISOString(),
+      });
 
-        // 3. Create transforms
-        const csvParser = parse({ headers: true });
-        const validationTransform = new ValidationTransform();
-        const formatterTransform = new FormatterTransform();
+      // 2. Download file stream from S3
+      const s3Stream = await downloadFileFromS3(objectKey);
 
-        // 4. Create Postgres COPY stream
-        const { stream: pgStream, done } = await createPostgresWriteStream();
-        pgCleanup = done;
+      // 3. Create transforms
+      const csvParser = parse({ headers: true });
+      const validationTransform = new ValidationTransform();
+      const formatterTransform = new FormatterTransform();
 
-        // 5. Execute pipeline: S3 → CSV Parser → Validation → Formatter → Postgres
-        await pipeline(
-          s3Stream,
-          csvParser,
-          validationTransform,
-          formatterTransform,
-          pgStream
-        );
+      // 4. Create Postgres COPY stream
+      const { stream: pgStream, done } = await createPostgresWriteStream();
+      pgCleanup = done;
 
-        // 6. Cleanup: Release DB connection
-        await pgCleanup();
-        pgCleanup = null;
+      // 5. Execute pipeline: S3 → CSV Parser → Validation → Formatter → Postgres
+      await pipeline(s3Stream, csvParser, validationTransform, formatterTransform, pgStream);
 
-        // 7. Delete from S3 after successful processing
-        await deleteFileFromS3(objectKey);
+      // 6. Cleanup: Release DB connection
+      await pgCleanup();
+      pgCleanup = null;
 
-        // 8. Update status to completed
-        const stats = validationTransform.getStats();
-        const rowsProcessed = stats.total - stats.invalid;
+      // 7. Delete from S3 after successful processing
+      await deleteFileFromS3(objectKey);
 
-        await updateStatus(uploadId, {
+      // 8. Update status to completed
+      const stats = validationTransform.getStats();
+      const rowsProcessed = stats.total - stats.invalid;
+
+      await updateStatus(uploadId, {
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        rowsProcessed,
+        rowsFailed: stats.invalid,
+      });
+
+      // 9. Enqueue webhook callback if callbackUrl is provided
+      const record = await getStatus(uploadId);
+
+      if (record?.callbackUrl) {
+        const payload: WebhookCallbackPayload = {
+          uploadId,
           status: 'completed',
-          completedAt: new Date().toISOString(),
           rowsProcessed,
           rowsFailed: stats.invalid,
+          timestamp: new Date().toISOString(),
+        };
+
+        await enqueueWebhook(uploadId, record.callbackUrl, payload);
+      }
+
+      // 10. Return success with stats
+      return reply.status(200).send({
+        success: true,
+        uploadId,
+        rowsProcessed: stats.total - stats.invalid,
+        rowsInvalid: stats.invalid,
+      });
+    } catch (error: unknown) {
+      if (pgCleanup) {
+        await pgCleanup();
+      }
+
+      request.log.error(error, 'Processing failed');
+
+      // Update status to failed and enqueue webhook (best-effort)
+      try {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+        await updateStatus(uploadId, {
+          status: 'failed',
+          error: errorMessage,
+          completedAt: new Date().toISOString(),
         });
 
-        // 9. Enqueue webhook callback if callbackUrl is provided
         const record = await getStatus(uploadId);
-
         if (record?.callbackUrl) {
           const payload: WebhookCallbackPayload = {
             uploadId,
-            status: 'completed',
-            rowsProcessed,
-            rowsFailed: stats.invalid,
+            status: 'failed',
+            rowsProcessed: 0,
+            error: errorMessage,
             timestamp: new Date().toISOString(),
           };
 
           await enqueueWebhook(uploadId, record.callbackUrl, payload);
         }
-
-        // 10. Return success with stats
-        return reply.status(200).send({
-          success: true,
-          uploadId,
-          rowsProcessed: stats.total - stats.invalid,
-          rowsInvalid: stats.invalid,
-        });
-      } catch (error: unknown) {
-        if (pgCleanup) {
-          await pgCleanup();
-        }
-
-        request.log.error(error, 'Processing failed');
-
-        // Update status to failed and enqueue webhook (best-effort)
-        try {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-          await updateStatus(uploadId, {
-            status: 'failed',
-            error: errorMessage,
-            completedAt: new Date().toISOString(),
-          });
-  
-          const record = await getStatus(uploadId);
-          if (record?.callbackUrl) {
-            const payload: WebhookCallbackPayload = {
-              uploadId,
-              status: 'failed',
-              rowsProcessed: 0,
-              error: errorMessage,
-              timestamp: new Date().toISOString(),
-            };
-            
-            await enqueueWebhook(uploadId, record.callbackUrl, payload);
-          }
-        } catch (statusError) {
-          request.log.error(statusError, 'Failed to update status after processing error');
-        }
-
-        return reply.status(500).send({
-          success: false,
-          uploadId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          message: 'File kept in S3 for retry',
-        })
+      } catch (statusError) {
+        request.log.error(statusError, 'Failed to update status after processing error');
       }
+
+      return reply.status(500).send({
+        success: false,
+        uploadId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        message: 'File kept in S3 for retry',
+      });
+    }
   });
 }

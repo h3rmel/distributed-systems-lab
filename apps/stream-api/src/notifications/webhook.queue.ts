@@ -1,7 +1,7 @@
-import { Job, Queue } from "bullmq";
-import { WebhookCallbackPayload, WebhookJobData } from "./types";
-import { WEBHOOK_QUEUE_NAME } from "./webhook.worker";
-import { getRedisConfig } from "./redis.client";
+import { Job, Queue } from 'bullmq';
+import { WebhookCallbackPayload, WebhookJobData } from './types';
+import { WEBHOOK_QUEUE_NAME } from './webhook.worker';
+import { getRedisConfig } from './redis.client';
 
 /**
  * BullMQ Queue for webhook delivery jobs.
@@ -24,7 +24,11 @@ const webhookQueue = new Queue<WebhookJobData>(WEBHOOK_QUEUE_NAME, {
  * Enqueues a webhook delivery job for async processing.
  * Called by the process route after pipeline completion/failure.
  */
-export async function enqueueWebhook(uploadId: string, callbackUrl: string, payload: WebhookCallbackPayload): Promise<Job<WebhookJobData>> {
+export async function enqueueWebhook(
+  uploadId: string,
+  callbackUrl: string,
+  payload: WebhookCallbackPayload,
+): Promise<Job<WebhookJobData>> {
   const jobData: WebhookJobData = {
     uploadId,
     callbackUrl,

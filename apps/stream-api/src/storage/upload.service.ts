@@ -1,11 +1,11 @@
-import type { Readable } from "node:stream";
-import { getBucket, s3Client } from "./storage.service";
-import { Upload } from "@aws-sdk/lib-storage";
+import type { Readable } from 'node:stream';
+import { getBucket, s3Client } from './storage.service';
+import { Upload } from '@aws-sdk/lib-storage';
 
 /**
  * Uploads a file stream to S3/MinIO.
  * Uses multipart upload for large files (handled automatically by @aws-sdk/lib-storage).
- * 
+ *
  * @param fileStream - Readable stream from HTTP multipart upload
  * @param objectKey - S3 object key (e.g., "uploads/abc123.csv")
  * @returns Promise with upload result containing Location and ETag
@@ -13,7 +13,7 @@ import { Upload } from "@aws-sdk/lib-storage";
 export async function uploadFileToS3(
   fileStream: Readable,
   objectKey: string,
-): Promise<{ location: string; etag: string | undefined}> {
+): Promise<{ location: string; etag: string | undefined }> {
   const bucket = getBucket();
 
   const upload = new Upload({
@@ -31,5 +31,5 @@ export async function uploadFileToS3(
   return {
     location: result.Location ?? `${bucket}/${objectKey}`,
     etag: result.ETag,
-  }
+  };
 }
