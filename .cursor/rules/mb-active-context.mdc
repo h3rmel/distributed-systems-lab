@@ -68,6 +68,11 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-02-17 | Test | Phase 3.12: OOM Test PASSED — 5M rows, 57MB avg memory, 48.7k rows/sec, 100% data consistency |
+| 2026-02-17 | Fix | Fixed CSV generator RFC 4180 escaping (JSON data field commas) |
+| 2026-02-17 | Infra | Added .dockerignore, replaced tsc with tsup bundler for stream-api ESM compatibility |
+| 2026-02-16 | Fix | Updated Dockerfiles (stream-api + ingestion-api) from node:20-alpine to node:24-alpine to match engines field |
+| 2026-02-16 | Feat | Phase 3.12: Created CSV generator script (5M rows, streaming with backpressure) |
 | 2026-02-03 | Docs | Corrected Memory Bank: Phase 3.1-3.11 complete (was incorrectly showing 3.1-3.3) |
 | 2026-01-28 | Feat | Phase 3.11: Created multi-stage Dockerfile for 512MB container deployment |
 | 2026-01-28 | Feat | Phase 3.10: Added memory monitoring service (v8 heap statistics) |
@@ -140,11 +145,12 @@ distributed-systems-lab/
 - **Dependencies**: Requires Project 1 WebSocket gateway
 
 ### Project 3: Stream API (`apps/stream-api`)
-- **Status**: **🚧 IN PROGRESS** - Phases 3.1-3.11 complete
-- **Tech Stack**: Node.js 20 Streams + Fastify + pg-copy-streams + S3/MinIO
+- **Status**: **🚧 IN PROGRESS** - Phases 3.1-3.12 complete
+- **Tech Stack**: Node.js Streams + Fastify + pg-copy-streams + S3/MinIO + tsup
 - **Key Features**: Memory-efficient CSV processing, backpressure handling, bulk inserts
 - **Target KPIs**: Process 2GB+ files in 512MB RAM, > 10k rows/sec
 - **Dependencies**: Requires shared database module
+- **OOM Test Results**: ✅ 5M rows, 57MB avg memory, 48.7k rows/sec, 100% data consistency (102.7s)
 - **Completed**:
   - Phase 3.1: Project setup (ESM, dependencies, tsconfig)
   - Phase 3.2: Fastify server with multipart support
@@ -154,6 +160,7 @@ distributed-systems-lab/
   - Phase 3.6-3.9: Transform Streams (ValidationTransform, FormatterTransform, postgres-writer)
   - Phase 3.10: Memory Monitoring (v8 heap statistics)
   - Phase 3.11: Docker Configuration (multi-stage Dockerfile)
+  - Phase 3.12: OOM Testing (5M rows in 512MB container) — PASSED
 
 ### Shared Packages
 | Package | Status | Description |
@@ -187,7 +194,7 @@ distributed-systems-lab/
 - [x] Phase 3.6-3.9: Transform Streams & Pipeline Integration ✅
 - [x] Phase 3.10: Memory Monitoring ✅
 - [x] Phase 3.11: Docker Configuration (512MB limit) ✅
-- [ ] Phase 3.12: OOM Testing (5M rows in 512MB)
+- [x] Phase 3.12: OOM Testing (5M rows in 512MB) ✅
 - [ ] Phase 3.14: Notification System (status polling + webhook callbacks)
 
 ### Phase 2: Live Dashboard (After Stream API)
@@ -292,5 +299,5 @@ STREAM_API_PORT=3002
   - ✅ Unit tests: 97%+ coverage, 55 tests passing
   - ✅ Docker containerization complete
   
-**Current:** Phase 3 - Stream API (Phases 3.1-3.11 complete)  
-**Next:** Phase 3.12 - OOM Testing (5M rows in 512MB container)
+**Current:** Phase 3 - Stream API (Phases 3.1-3.12 complete, OOM test passed)  
+**Next:** Phase 3.14 - Notification System (status polling + webhook callbacks)

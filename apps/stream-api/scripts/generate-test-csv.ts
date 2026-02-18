@@ -7,13 +7,17 @@ const OUTPUT_PATH = path.join(process.cwd(), 'mocks', 'large-test.csv');
 
 const PROVIDERS = ['stripe', 'paypal', 'square', 'adyen', 'braintree'];
 
+function escapeForCsv(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
 function generateRow(index: number): string {
   const provider = PROVIDERS[index % PROVIDERS.length];
   const eventId = `evt_${randomUUID()}`;
   const timestamp = new Date(Date.now() - index * 1000).toISOString();
   const data = JSON.stringify({ amount: (index % 10000) + 1, index });
 
-  return `${provider},${eventId},${timestamp},${data}\n`;
+  return `${provider},${eventId},${timestamp},${escapeForCsv(data)}\n`;
 }
 
 async function generateCSV(): Promise<void> {
