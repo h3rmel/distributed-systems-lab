@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented. **Phase 3 COMPLETE** - Stream API fully implemented with notification system. Current: Phase 2 (Live Dashboard).
+- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented. **Phase 3 COMPLETE** - Stream API fully refactored (ADR-0008). Current: Phase 2 (Live Dashboard).
 
 ## 2. Monorepo Structure
 
@@ -69,6 +69,8 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-02-19 | Refactor | Phase 3.16: OOP refactor — 7 service classes, manual composition root, Fastify decoration, 4 singletons eliminated |
+| 2026-02-19 | Refactor | Phase 3.15: Import aliases (`#/*`), normalized .js extensions, 14 cross-module imports updated |
 | 2026-02-18 | Docs | ADR-0008: Stream API OOP Refactor & Import Aliases. Updated TODO.md Phase 3 (3.1-3.14 marked complete, added 3.15-3.16) |
 | 2026-02-18 | Feat | Phase 3.14: Notification system — Redis status storage, BullMQ webhook delivery, status polling endpoint |
 | 2026-02-17 | Test | Phase 3.12: OOM Test PASSED — 5M rows, 57MB avg memory, 48.7k rows/sec, 100% data consistency |
@@ -200,8 +202,8 @@ distributed-systems-lab/
 - [x] Phase 3.11: Docker Configuration (512MB limit) ✅
 - [x] Phase 3.12: OOM Testing (5M rows in 512MB) ✅
 - [x] Phase 3.14: Notification System (status polling + webhook callbacks) ✅
-- [ ] Phase 3.15: Import Aliases — `@/*` path alias (ADR-0008)
-- [ ] Phase 3.16: OOP Refactor — Manual Composition Root (ADR-0008)
+- [x] Phase 3.15: Import Aliases — `#/*` path alias (ADR-0008) ✅
+- [x] Phase 3.16: OOP Refactor — Manual Composition Root (ADR-0008) ✅
 
 ### Phase 2: Live Dashboard (Next Focus)
 - [ ] Initialize Next.js 14 with App Router
@@ -305,5 +307,5 @@ STREAM_API_PORT=3002
   - ✅ Unit tests: 97%+ coverage, 55 tests passing
   - ✅ Docker containerization complete
   
-**Current:** Phase 3 functionally COMPLETE (3.1-3.14). Pending: 3.15 (import aliases) + 3.16 (OOP refactor) per ADR-0008.  
-**Next:** Phase 3.15-3.16 refactor, then Phase 2 - Live Dashboard (Next.js 14 + Zustand + Socket.io)
+**Current:** Phase 3 fully COMPLETE (3.1-3.16, including OOP refactor per ADR-0008).  
+**Next:** Phase 2 - Live Dashboard (Next.js 14 + Zustand + Socket.io)

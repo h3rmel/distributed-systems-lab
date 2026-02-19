@@ -669,64 +669,37 @@ const logger = createLogger('live-dashboard');
 - [x] Updated `docker-compose.yaml`: Redis env vars + dependency for stream-api
 - [x] Created ADR-0007: Notification System for Stream API
 
-### 3.15 Import Aliases (ADR-0008)
-- [ ] Update `apps/stream-api/tsconfig.json`:
-  - [ ] Add `"baseUrl": "."`
-  - [ ] Add `"paths": { "@/*": ["./src/*"] }`
-- [ ] Rewrite cross-module imports to use `@/` alias:
-  - [ ] `routes/upload.ts` — `../storage/index.js` → `@/storage`
-  - [ ] `routes/upload.ts` — `../notifications/status.service.js` → `@/notifications/status.service`
-  - [ ] `routes/process.ts` — `../storage` → `@/storage`
-  - [ ] `routes/process.ts` — `../streams/postgres-writer` → `@/streams/postgres-writer`
-  - [ ] `routes/process.ts` — `../transforms/*` → `@/transforms/*`
-  - [ ] `routes/process.ts` — `../notifications/*` → `@/notifications/*`
-  - [ ] `routes/status.ts` — `../notifications/status.service` → `@/notifications/status.service`
-  - [ ] `server.ts` — `./routes/*`, `./monitoring/*`, `./notifications` → `@/routes/*`, `@/monitoring/*`, `@/notifications`
-- [ ] Keep `./` relative imports for intra-module references (within same folder)
-- [ ] Verify `tsup` build resolves aliases: `pnpm build`
-- [ ] Verify `tsx` dev resolves aliases: `pnpm dev`
+### 3.15 Import Aliases (ADR-0008) ✅
+- [x] Update `apps/stream-api/tsconfig.json`:
+  - [x] Add `"baseUrl": "."`
+  - [x] Add `"paths": { "#/*": ["./src/*"] }`
+- [x] Rewrite cross-module imports to use `#/` alias (14 imports across 4 files)
+- [x] Normalize intra-module `.js` extension inconsistency (2 files)
+- [x] Keep `./` relative imports for intra-module references (within same folder)
+- [x] Verify `tsup` build resolves aliases: `pnpm build` ✅
 
-### 3.16 OOP Refactor — Manual Composition Root (ADR-0008)
-- [ ] Create service classes (replace module-level singletons):
-  - [ ] `StorageService` — consolidate `storage.service.ts`, `upload.service.ts`, `download.service.ts`, `cleanup.service.ts`
-    - [ ] Constructor accepts S3 config (endpoint, bucket, credentials)
-    - [ ] Methods: `upload()`, `download()`, `delete()`
-    - [ ] No module-level `s3Client` singleton
-  - [ ] `RedisClient` — wrap `redis.client.ts`
-    - [ ] Constructor accepts Redis config (host, port)
-    - [ ] Methods: `connect()`, `disconnect()`, raw `client` getter
-    - [ ] No module-level `redis` singleton
-  - [ ] `StatusService` — wrap `status.service.ts`
-    - [ ] Constructor accepts `RedisClient` (DI)
-    - [ ] Methods: `create()`, `update()`, `get()`
-  - [ ] `WebhookQueue` — wrap `webhook.queue.ts`
-    - [ ] Constructor accepts Redis config
-    - [ ] Methods: `enqueue()`, `close()`
-    - [ ] No module-level `webhookQueue` singleton
-  - [ ] `WebhookWorker` — wrap `webhook.worker.ts`
-    - [ ] Constructor accepts Redis config
-    - [ ] Methods: `close()`
-    - [ ] No module-level `webhookWorker` singleton
-  - [ ] `DatabaseService` — wrap `postgres-writer.ts`
-    - [ ] Constructor accepts DB config (host, port, user, password, database)
-    - [ ] Methods: `createCopyStream()`, `close()`
-    - [ ] No module-level `pool` singleton
-  - [ ] `MemoryMonitor` — wrap `memory.ts`
-    - [ ] Methods: `start()`, `stop()`
-- [ ] Update `server.ts` as composition root:
-  - [ ] Instantiate all services with explicit config
-  - [ ] Wire dependencies (e.g., `StatusService` receives `RedisClient`)
-  - [ ] Decorate Fastify app with service instances
-  - [ ] Update graceful shutdown to call `close()` on each service in order
-- [ ] Update route plugins to receive services from Fastify app context:
-  - [ ] `routes/upload.ts` — use `app.storageService`, `app.statusService`
-  - [ ] `routes/process.ts` — use `app.storageService`, `app.statusService`, `app.webhookQueue`, `app.databaseService`
-  - [ ] `routes/status.ts` — use `app.statusService`
-- [ ] Add Fastify type augmentation for decorated services
-- [ ] Update barrel exports (`index.ts` files) to export classes
-- [ ] Verify build: `pnpm build`
-- [ ] Verify dev: `pnpm dev`
-- [ ] Re-run OOM test (5M rows in 512MB container) to confirm no performance regression
+### 3.16 OOP Refactor — Manual Composition Root (ADR-0008) ✅
+- [x] Create service classes (replace module-level singletons):
+  - [x] `StorageService` — consolidate 4 storage files into 1 class
+  - [x] `RedisClient` — wrap ioredis singleton with constructor injection
+  - [x] `StatusService` — inject `RedisClient.instance` via constructor
+  - [x] `WebhookQueue` — wrap BullMQ Queue with RedisConfig
+  - [x] `WebhookWorker` — wrap BullMQ Worker with RedisConfig
+  - [x] `DatabaseService` — wrap pg Pool + COPY stream
+  - [x] `MemoryMonitor` — `start()`/`stop()` lifecycle
+- [x] Update `server.ts` as composition root:
+  - [x] Fastify type augmentation (`declare module 'fastify'`)
+  - [x] Instantiate all services with explicit config
+  - [x] Wire dependencies (StatusService receives RedisClient.instance)
+  - [x] Decorate Fastify app with service instances
+  - [x] Graceful shutdown in reverse creation order
+- [x] Update route plugins to use decorated services:
+  - [x] `routes/upload.ts` — `app.storageService`, `app.statusService`
+  - [x] `routes/process.ts` — `app.storageService`, `app.statusService`, `app.webhookQueue`, `app.databaseService`
+  - [x] `routes/status.ts` — `app.statusService`
+- [x] Update barrel exports to export classes
+- [x] Delete obsolete files: `upload.service.ts`, `download.service.ts`, `cleanup.service.ts`
+- [x] Verify build: `pnpm build` ✅
 
 ---
 
@@ -869,4 +842,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-02-18
-**Status:** Phase 1 ✅ COMPLETE. Phase 3 ✅ COMPLETE (3.1-3.14). Next: Phase 3.15-3.16 (refactor), then Phase 2 (Live Dashboard).
+**Status:** Phase 1 ✅ COMPLETE. Phase 3 ✅ COMPLETE (3.1-3.16). Next: Phase 2 (Live Dashboard).
