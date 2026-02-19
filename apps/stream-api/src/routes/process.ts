@@ -1,13 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { parse } from 'fast-csv';
 import { pipeline } from 'node:stream/promises';
-import { downloadFileFromS3, deleteFileFromS3 } from '#/storage';
-import { createPostgresWriteStream } from '#/streams/postgres-writer';
 import { ValidationTransform } from '#/transforms/validation';
 import { FormatterTransform } from '#/transforms/formatter';
-import { getStatus, updateStatus } from '#/notifications/status.service';
 import { WebhookCallbackPayload } from '#/notifications/types';
-import { enqueueWebhook } from '#/notifications/webhook.queue';
 
 /**
  * Processing routes for CSV file ingestion.
@@ -29,13 +25,13 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       // 1. Update status to processing
-      await updateStatus(uploadId, {
+      await app.statusService.update(uploadId, {
         status: 'processing',
         startedAt: new Date().toISOString(),
       });
 
       // 2. Download file stream from S3
-      const s3Stream = await downloadFileFromS3(objectKey);
+      const s3Stream = await app.storageService.download(objectKey);
 
       // 3. Create transforms
       const csvParser = parse({ headers: true });
@@ -43,7 +39,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       const formatterTransform = new FormatterTransform();
 
       // 4. Create Postgres COPY stream
-      const { stream: pgStream, done } = await createPostgresWriteStream();
+      const { stream: pgStream, done } = await app.databaseService.createCopyStream();
       pgCleanup = done;
 
       // 5. Execute pipeline: S3 → CSV Parser → Validation → Formatter → Postgres
@@ -54,13 +50,13 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       pgCleanup = null;
 
       // 7. Delete from S3 after successful processing
-      await deleteFileFromS3(objectKey);
+      await app.storageService.delete(objectKey);
 
       // 8. Update status to completed
       const stats = validationTransform.getStats();
       const rowsProcessed = stats.total - stats.invalid;
 
-      await updateStatus(uploadId, {
+      await app.statusService.update(uploadId, {
         status: 'completed',
         completedAt: new Date().toISOString(),
         rowsProcessed,
@@ -68,7 +64,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       });
 
       // 9. Enqueue webhook callback if callbackUrl is provided
-      const record = await getStatus(uploadId);
+      const record = await app.statusService.get(uploadId);
 
       if (record?.callbackUrl) {
         const payload: WebhookCallbackPayload = {
@@ -79,7 +75,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
           timestamp: new Date().toISOString(),
         };
 
-        await enqueueWebhook(uploadId, record.callbackUrl, payload);
+        await app.webhookQueue.enqueue(uploadId, record.callbackUrl, payload);
       }
 
       // 10. Return success with stats
@@ -100,13 +96,13 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       try {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-        await updateStatus(uploadId, {
+        await app.statusService.update(uploadId, {
           status: 'failed',
           error: errorMessage,
           completedAt: new Date().toISOString(),
         });
 
-        const record = await getStatus(uploadId);
+        const record = await app.statusService.get(uploadId);
         if (record?.callbackUrl) {
           const payload: WebhookCallbackPayload = {
             uploadId,
@@ -116,7 +112,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
             timestamp: new Date().toISOString(),
           };
 
-          await enqueueWebhook(uploadId, record.callbackUrl, payload);
+          await app.webhookQueue.enqueue(uploadId, record.callbackUrl, payload);
         }
       } catch (statusError) {
         request.log.error(statusError, 'Failed to update status after processing error');

@@ -1,5 +1,4 @@
 import { FastifyInstance } from 'fastify';
-import { getStatus } from '#/notifications/status.service';
 
 /**
  * Status polling routes for upload processing lifecycle.
@@ -15,7 +14,7 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
   }>('/upload/:uploadId/status', async (request, reply) => {
     const { uploadId } = request.params;
 
-    const record = await getStatus(uploadId);
+    const record = await app.statusService.get(uploadId);
 
     if (!record) {
       return reply.status(404).send({

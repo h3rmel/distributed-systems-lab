@@ -4,7 +4,8 @@ export type {
   WebhookCallbackPayload,
   WebhookJobData,
 } from './types';
-export { redis, getRedisConfig, disconnectRedis } from './redis.client';
-export { createStatus, updateStatus, getStatus } from './status.service';
-export { enqueueWebhook, closeWebhookQueue } from './webhook.queue';
-export { WEBHOOK_QUEUE_NAME, closeWebhookWorker } from './webhook.worker';
+export { RedisClient } from './redis.client';
+export type { RedisConfig } from './redis.client';
+export { StatusService } from './status.service';
+export { WebhookQueue, WEBHOOK_QUEUE_NAME } from './webhook.queue';
+export { WebhookWorker } from './webhook.worker';

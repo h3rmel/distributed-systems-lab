@@ -1,7 +1,5 @@
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
-import { uploadFileToS3 } from '#/storage';
-import { createStatus } from '#/notifications/status.service';
 
 /**
  * Upload routes for CSV file ingestion.
@@ -38,10 +36,10 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       // 3. Stream HTTP file directly to S3 (no disk, no memory)
-      const result = await uploadFileToS3(data.file, objectKey);
+      const result = await app.storageService.upload(data.file, objectKey);
 
       // 4. Create initial status record
-      await createStatus(uploadId, objectKey, callbackUrl);
+      await app.statusService.create(uploadId, objectKey, callbackUrl);
 
       // 5. Return 202 Accepted with tracking info
       return reply.status(202).send({

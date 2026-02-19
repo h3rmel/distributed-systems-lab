@@ -11,7 +11,7 @@ export interface RedisConfig {
  * Injected into StatusService. BullMQ Queue/Worker use raw config instead.
  */
 export class RedisClient {
-  private instance: Redis;
+  readonly instance: Redis;
 
   constructor(config: RedisConfig) {
     this.instance = new Redis({
