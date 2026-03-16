@@ -326,8 +326,9 @@ const logger = createLogger('live-dashboard');
   - [x] E2E test: `metrics.e2e-spec.ts` (connection, events, full flow)
 
 ### 1.10 Load Testing (K6) ✅
-- [x] Create `test/load-test.js` (JavaScript with JSDoc for autocomplete)
-- [x] Install k6 v1.5.0 (TypeScript support, but using JS for compatibility)
+- [x] Create `test/load-test.ts` (TypeScript with `@types/k6`)
+- [x] Created `test/k6-utils.d.ts` for jslib URL import type declarations
+- [x] Install k6 v1.5.0 (native TypeScript support)
 - [x] Run test: `pnpm test:load` (k6 run test/load-test.js)
 - [x] Verify acceptance criteria:
   - [x] Throughput: 499 max VUs (target 500) ✅
