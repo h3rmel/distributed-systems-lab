@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "test:load": "k6 run test/load-test.js"
+    "test:load": "k6 run test/load-test.ts"
   },
   "dependencies": {
     "@distributed-systems-lab/database": "workspace:*",
