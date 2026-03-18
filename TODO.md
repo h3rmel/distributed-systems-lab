@@ -483,10 +483,13 @@ const logger = createLogger('live-dashboard');
 - [x] Theme tokens: Replaced hardcoded zinc colors with Shadcn semantic tokens (border, muted-foreground, foreground)
 - [x] Added lib/utils.ts (cn helper), globals.css with CSS custom properties for dark theme
 
-### 2.10 Dockerfile (Optional)
-- [ ] Create multi-stage Dockerfile for Next.js
-- [ ] Add live-dashboard service to `docker-compose.yml`
-- [ ] Build and test: `docker compose up live-dashboard`
+### 2.10 Dockerfile ✅
+- [x] Enabled `output: 'standalone'` in `next.config.ts`
+- [x] Created multi-stage Dockerfile (base → deps → builder → runner)
+- [x] Build arg `NEXT_PUBLIC_API_URL` for client-side WebSocket URL (baked at build time)
+- [x] Added live-dashboard service to `docker-compose.yaml` (port 3000, depends on ingestion-api)
+- [x] Added `**/.next` to root `.dockerignore`
+- [x] Build and test: `docker compose up live-dashboard` ✅
 
 ---
 
@@ -804,4 +807,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-03-16
-**Status:** Phase 1 ✅ COMPLETE. Phase 3 ✅ COMPLETE (3.1-3.16). Phase 2 🔧 IN PROGRESS (2.1-2.9 done, 2.10 pending).
+**Status:** Phase 1 ✅ COMPLETE. Phase 2 ✅ COMPLETE (2.1-2.10). Phase 3 ✅ COMPLETE (3.1-3.16). Next: Phase 4 (Integration & Documentation).

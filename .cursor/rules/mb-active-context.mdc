@@ -17,7 +17,7 @@ globs: **/*
 distributed-systems-lab/
 ├── apps/
 │   ├── ingestion-api/     (NestJS + Fastify + BullMQ) - ✅ COMPLETE (with 97%+ test coverage)
-│   ├── live-dashboard/    (Next.js 16 + Zustand 5 + Socket.io) - 🔧 IN PROGRESS (core done, UI polish pending)
+│   ├── live-dashboard/    (Next.js 16 + Zustand 5 + Socket.io) - ✅ COMPLETE (with Shadcn UI + Docker)
 │   └── stream-api/        (Node.js Streams + Fastify) - ✅ COMPLETE (with notification system)
 ├── packages/
 │   ├── dto/               ✅ @distributed-systems-lab/dto
@@ -69,6 +69,7 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-03-16 | Infra | Phase 2.10: Dockerfile (multi-stage standalone) + docker-compose service for live-dashboard |
 | 2026-03-16 | Refactor | Phase 2.9: Shadcn UI — Card, Chart (ChartContainer/ChartTooltip), ScrollArea components, full-viewport layout, theme tokens |
 | 2026-03-16 | Feat | Phase 2.1-2.8: Live Dashboard core — Zustand store, Socket.io client, ThroughputChart, LiveLogStream (TanStack Virtual), MetricsCards |
 | 2026-03-16 | Test | Dashboard freeze test passed — chart updates, events stream, connection recovery all working under 200 VU load |
@@ -147,7 +148,7 @@ distributed-systems-lab/
 - **Test Coverage**: ✅ 97.77% statements, 74.35% branches, 88.46% functions, 97.39% lines
 
 ### Project 2: Live Dashboard (`apps/live-dashboard`)
-- **Status**: **🔧 IN PROGRESS** - Core + Shadcn UI complete (2.1-2.9), pending Dockerfile (2.10)
+- **Status**: **✅ COMPLETE** - All phases (2.1-2.10) complete
 - **Tech Stack**: Next.js 16 (App Router) + Zustand 5 + Socket.io + Recharts 3 + TailwindCSS 4
 - **Key Features**: Real-time RPS chart, live event stream (TanStack Virtual), socket reconnection, metrics cards
 - **Target KPIs**: 60 FPS with 100+ events/sec, < 200ms latency, < 70% CPU
@@ -162,6 +163,7 @@ distributed-systems-lab/
   - Phase 2.7: MetricsCards (RPS, total events, avg processing time, connection)
   - Phase 2.8: Freeze test passed (chart, events, connection recovery under load)
   - Phase 2.9: Shadcn UI (Card, Chart, ScrollArea), full-viewport layout, theme tokens
+  - Phase 2.10: Dockerfile (multi-stage standalone) + docker-compose integration
 - **Freeze Test Results**: Chart updates, events stream, connection recovery — all working under 200 VU K6 load
 
 ### Project 3: Stream API (`apps/stream-api`)
@@ -230,7 +232,7 @@ distributed-systems-lab/
 - [x] Phase 2.7: MetricsCards (RPS, events, processing time) ✅
 - [x] Phase 2.8: Performance testing (Freeze Test) ✅
 - [x] Phase 2.9: Shadcn UI implementation (Card, Chart, ScrollArea, theme tokens) ✅
-- [ ] Phase 2.10: Dockerfile (optional containerization)
+- [x] Phase 2.10: Dockerfile + docker-compose integration ✅
 
 ## 6. Active Architecture Decisions
 
@@ -326,5 +328,6 @@ STREAM_API_PORT=3002
   - ✅ Unit tests: 97%+ coverage, 55 tests passing
   - ✅ Docker containerization complete
   
-**Current:** Phase 2 IN PROGRESS — core + Shadcn UI done (2.1-2.9), pending Dockerfile (2.10).  
-**Completed:** Phase 1 (Ingestion API), Phase 3 (Stream API with OOP refactor per ADR-0008).
+**Current:** Phase 2 COMPLETE (2.1-2.10). All three projects fully implemented.  
+**Completed:** Phase 1 (Ingestion API), Phase 2 (Live Dashboard), Phase 3 (Stream API).  
+**Next:** Phase 4 — Integration & Documentation.
