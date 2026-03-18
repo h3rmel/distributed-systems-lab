@@ -7,7 +7,10 @@
     "build": "tsup",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "generate:csv": "tsx scripts/generate-test-csv.ts"
+    "generate:csv": "tsx scripts/generate-test-csv.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage"
   },
   "type": "module",
   "dependencies": {
@@ -28,8 +31,10 @@
   "devDependencies": {
     "@types/node": "^25.0.8",
     "@types/pg": "^8.16.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
   }
 }
