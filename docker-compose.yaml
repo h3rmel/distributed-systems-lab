@@ -65,6 +65,25 @@ services:
         condition: service_healthy
     networks:
       - distributed-lab-network
+
+  live-dashboard:
+    build:
+      context: .
+      dockerfile: apps/live-dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001
+    container_name: distributed-lab-live-dashboard
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: production
+    depends_on:
+      ingestion-api:
+        condition: service_healthy
+    networks:
+      - distributed-lab-network
+
   minio:
     image: minio/minio:latest
     container_name: distributed-lab-minio
