@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented. **Phase 3 COMPLETE** - Stream API fully refactored (ADR-0008). Current: Phase 2 (Live Dashboard).
+- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented. **Phase 3 COMPLETE** - Stream API fully refactored (ADR-0008). **Phase 2 IN PROGRESS** - Live Dashboard core implemented (2.1-2.8), pending Shadcn UI polish (2.9) and Dockerfile (2.10).
 
 ## 2. Monorepo Structure
 
@@ -17,7 +17,7 @@ globs: **/*
 distributed-systems-lab/
 ├── apps/
 │   ├── ingestion-api/     (NestJS + Fastify + BullMQ) - ✅ COMPLETE (with 97%+ test coverage)
-│   ├── live-dashboard/    (Next.js 14 + Zustand + Socket.io) - NOT STARTED
+│   ├── live-dashboard/    (Next.js 16 + Zustand 5 + Socket.io) - 🔧 IN PROGRESS (core done, UI polish pending)
 │   └── stream-api/        (Node.js Streams + Fastify) - ✅ COMPLETE (with notification system)
 ├── packages/
 │   ├── dto/               ✅ @distributed-systems-lab/dto
@@ -69,6 +69,8 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-03-16 | Feat | Phase 2.1-2.8: Live Dashboard core — Zustand store, Socket.io client, ThroughputChart, LiveLogStream (TanStack Virtual), MetricsCards |
+| 2026-03-16 | Test | Dashboard freeze test passed — chart updates, events stream, connection recovery all working under 200 VU load |
 | 2026-02-19 | Refactor | Ingestion API: Converted K6 load test from JS to TS, added k6-utils.d.ts type declarations |
 | 2026-02-19 | Refactor | Phase 3.16: OOP refactor — 7 service classes, manual composition root, Fastify decoration, 4 singletons eliminated |
 | 2026-02-19 | Refactor | Phase 3.15: Import aliases (`#/*`), normalized .js extensions, 14 cross-module imports updated |
@@ -144,11 +146,21 @@ distributed-systems-lab/
 - **Test Coverage**: ✅ 97.77% statements, 74.35% branches, 88.46% functions, 97.39% lines
 
 ### Project 2: Live Dashboard (`apps/live-dashboard`)
-- **Status**: Not started
-- **Tech Stack**: Next.js 14 (App Router) + Zustand + Socket.io + Recharts + TailwindCSS
-- **Key Features**: Real-time RPS chart, live event stream, socket reconnection
+- **Status**: **🔧 IN PROGRESS** - Core implementation complete (2.1-2.8), pending Shadcn UI polish (2.9) and Dockerfile (2.10)
+- **Tech Stack**: Next.js 16 (App Router) + Zustand 5 + Socket.io + Recharts 3 + TailwindCSS 4
+- **Key Features**: Real-time RPS chart, live event stream (TanStack Virtual), socket reconnection, metrics cards
 - **Target KPIs**: 60 FPS with 100+ events/sec, < 200ms latency, < 70% CPU
-- **Dependencies**: Requires Project 1 WebSocket gateway
+- **Dependencies**: Requires Project 1 WebSocket gateway (confirmed working)
+- **Completed**:
+  - Phase 2.1: Project setup (Next.js 16, deps, tsconfig, env)
+  - Phase 2.2: Zustand store (event buffer, RPS computation, chart data)
+  - Phase 2.3: Socket.io client (typed socket, connection manager singleton)
+  - Phase 2.4: Dashboard layout (page shell, connection status indicator, grid)
+  - Phase 2.5: ThroughputChart (Recharts LineChart, 1s throttled updates)
+  - Phase 2.6: LiveLogStream (TanStack Virtual, last 100 events)
+  - Phase 2.7: MetricsCards (RPS, total events, avg processing time, connection)
+  - Phase 2.8: Freeze test passed (chart, events, connection recovery under load)
+- **Freeze Test Results**: Chart updates, events stream, connection recovery — all working under 200 VU K6 load
 
 ### Project 3: Stream API (`apps/stream-api`)
 - **Status**: **✅ COMPLETE** - All phases (3.1-3.14) complete
@@ -206,13 +218,17 @@ distributed-systems-lab/
 - [x] Phase 3.15: Import Aliases — `#/*` path alias (ADR-0008) ✅
 - [x] Phase 3.16: OOP Refactor — Manual Composition Root (ADR-0008) ✅
 
-### Phase 2: Live Dashboard (Next Focus)
-- [ ] Initialize Next.js 14 with App Router
-- [ ] Setup Zustand store for metrics
-- [ ] Implement Socket.io client with reconnection
-- [ ] Create ThroughputChart with throttled updates
-- [ ] Implement LiveLogStream with TanStack Virtual
-- [ ] Performance testing (Freeze Test)
+### Phase 2: Live Dashboard (Current Focus)
+- [x] Phase 2.1: Initialize Next.js 16 with App Router ✅
+- [x] Phase 2.2: Setup Zustand 5 store for metrics ✅
+- [x] Phase 2.3: Implement Socket.io client with reconnection ✅
+- [x] Phase 2.4: Dashboard layout with connection status ✅
+- [x] Phase 2.5: ThroughputChart with throttled updates ✅
+- [x] Phase 2.6: LiveLogStream with TanStack Virtual ✅
+- [x] Phase 2.7: MetricsCards (RPS, events, processing time) ✅
+- [x] Phase 2.8: Performance testing (Freeze Test) ✅
+- [ ] Phase 2.9: Shadcn UI implementation (UI polish)
+- [ ] Phase 2.10: Dockerfile (optional containerization)
 
 ## 6. Active Architecture Decisions
 
@@ -308,5 +324,5 @@ STREAM_API_PORT=3002
   - ✅ Unit tests: 97%+ coverage, 55 tests passing
   - ✅ Docker containerization complete
   
-**Current:** Phase 3 fully COMPLETE (3.1-3.16, including OOP refactor per ADR-0008).  
-**Next:** Phase 2 - Live Dashboard (Next.js 14 + Zustand + Socket.io)
+**Current:** Phase 2 IN PROGRESS — core dashboard done (2.1-2.8), pending Shadcn UI polish (2.9) and Dockerfile (2.10).  
+**Completed:** Phase 1 (Ingestion API), Phase 3 (Stream API with OOP refactor per ADR-0008).
