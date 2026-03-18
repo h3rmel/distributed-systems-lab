@@ -475,10 +475,13 @@ const logger = createLogger('live-dashboard');
 - [x] Connection status recovers on API stop/restart ✅
 - [x] **DEFINITION OF DONE:** All acceptance criteria passed ✅
 
-### 2.9 Shadcn UI Implementation
-- [ ] Install and configure Shadcn/UI
-- [ ] Replace raw Tailwind components with Shadcn equivalents
-- [ ] UI polish and dark mode refinement
+### 2.9 Shadcn UI Implementation ✅
+- [x] Install and configure Shadcn/UI (Card, Chart, ScrollArea components)
+- [x] ThroughputChart: Replaced ResponsiveContainer/Tooltip with ChartContainer/ChartTooltip, CSS variable theming
+- [x] LiveLogStream: Replaced raw div with ScrollArea + TanStack Virtual integration via viewport query
+- [x] Page layout: Full-viewport Card layout (h-dvh), flex-col stretch, Shadcn Card/CardHeader/CardContent/CardFooter
+- [x] Theme tokens: Replaced hardcoded zinc colors with Shadcn semantic tokens (border, muted-foreground, foreground)
+- [x] Added lib/utils.ts (cn helper), globals.css with CSS custom properties for dark theme
 
 ### 2.10 Dockerfile (Optional)
 - [ ] Create multi-stage Dockerfile for Next.js
@@ -801,4 +804,4 @@ const logger = createLogger('live-dashboard');
 ---
 
 **Last Updated:** 2026-03-16
-**Status:** Phase 1 ✅ COMPLETE. Phase 3 ✅ COMPLETE (3.1-3.16). Phase 2 🔧 IN PROGRESS (2.1-2.8 done, 2.9-2.10 pending).
+**Status:** Phase 1 ✅ COMPLETE. Phase 3 ✅ COMPLETE (3.1-3.16). Phase 2 🔧 IN PROGRESS (2.1-2.9 done, 2.10 pending).
