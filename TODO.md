@@ -347,65 +347,30 @@ const logger = createLogger('live-dashboard');
 - [x] Test: `docker compose up ingestion-api`
 - [x] Fix logger configuration for production Docker environments (pino-pretty only in development)
 
-### 1.12 Unit Tests
-- [ ] Setup test utilities and mocks:
-  - [ ] Create `test/utils/test-helpers.ts` for common test utilities
-  - [ ] Create `test/mocks/` directory for shared mocks (Redis, Database, Queue)
-  - [ ] Configure Jest coverage thresholds (target: 80%+ overall, 90%+ for services)
-- [ ] Webhook Module Tests:
-  - [ ] `webhook.controller.spec.ts`:
-    - [ ] Should call service.enqueue() with correct parameters
-    - [ ] Should return 202 Accepted with IngestResponseDto
-    - [ ] Should handle validation errors (400 Bad Request)
-  - [ ] `webhook.service.spec.ts`:
-    - [ ] Should enqueue job with correct WebhookJobData
-    - [ ] Should use eventId as jobId
-    - [ ] Should return accepted: true with jobId
-    - [ ] Should handle queue errors gracefully
-  - [ ] `dto/create-webhook.dto.spec.ts`:
-    - [ ] Should validate required fields (eventId, timestamp, data)
-    - [ ] Should reject invalid ISO8601 timestamps
-    - [ ] Should reject non-object data field
-- [ ] Worker Module Tests:
-  - [ ] `idempotency.service.spec.ts`:
-    - [ ] Should return false for unprocessed eventId
-    - [ ] Should return true for processed eventId
-    - [ ] Should mark eventId as processed with 24h TTL
-    - [ ] Should build correct Redis key format
-    - [ ] Should close Redis connection on module destroy
-  - [ ] `webhook.processor.spec.ts`:
-    - [ ] Should skip processing if eventId already processed
-    - [ ] Should insert webhook event to database
-    - [ ] Should mark eventId as processed after insert
-    - [ ] Should emit job-completed event via MetricsGateway
-    - [ ] Should calculate processing time correctly
-    - [ ] Should log appropriate messages at each stage
-    - [ ] Should handle database errors gracefully
-- [ ] Health Module Tests:
-  - [ ] `health.controller.spec.ts`:
-    - [ ] Should call all health indicators
-    - [ ] Should return health check result
-  - [ ] `indicators/database.health.spec.ts`:
-    - [ ] Should return up when database is healthy (SELECT 1 succeeds)
-    - [ ] Should return down when database query fails
-  - [ ] `indicators/redis.health.spec.ts`:
-    - [ ] Should return up when Redis PING returns PONG
-    - [ ] Should return down when Redis PING fails
-    - [ ] Should close Redis connection on module destroy
-- [ ] Metrics Module Tests:
-  - [ ] `metrics.gateway.spec.ts` (already exists, verify completeness):
-    - [x] Should emit job-completed event with correct payload
-    - [x] Should emit to all connected clients
-  - [ ] Add edge case tests if needed
-- [ ] App Module Tests:
-  - [ ] `app.controller.spec.ts`:
-    - [ ] Should return root endpoint response
-  - [ ] `app.service.spec.ts`:
-    - [ ] Should return getHello() response
-- [ ] Run test coverage:
-  - [ ] `pnpm test:cov` - Verify coverage thresholds met
-  - [ ] Review coverage report for untested edge cases
-  - [ ] Add missing tests to reach 80%+ coverage
+### 1.12 Unit Tests ✅
+- [x] Setup test utilities and mocks:
+  - [x] Create `test/utils/test-helpers.ts` for common test utilities
+  - [x] Configure Jest coverage thresholds (target: 80%+ overall, 90%+ for services)
+- [x] Webhook Module Tests:
+  - [x] `webhook.controller.spec.ts`
+  - [x] `webhook.service.spec.ts`
+  - [x] `dto/create-webhook.dto.spec.ts`
+- [x] Worker Module Tests:
+  - [x] `idempotency.service.spec.ts`
+  - [x] `webhook.processor.spec.ts`
+- [x] Health Module Tests:
+  - [x] `health.controller.spec.ts`
+  - [x] `indicators/database.health.spec.ts`
+  - [x] `indicators/redis.health.spec.ts`
+- [x] Metrics Module Tests:
+  - [x] `metrics.gateway.spec.ts`
+- [x] App Module Tests:
+  - [x] `app.controller.spec.ts`
+  - [x] `app.service.spec.ts`
+- [x] E2E Tests:
+  - [x] `test/app.e2e-spec.ts`
+  - [x] `test/metrics.e2e-spec.ts`
+- [x] Coverage: 97%+ achieved ✅
 
 ---
 
@@ -665,6 +630,81 @@ const logger = createLogger('live-dashboard');
 - [x] Update barrel exports to export classes
 - [x] Delete obsolete files: `upload.service.ts`, `download.service.ts`, `cleanup.service.ts`
 - [x] Verify build: `pnpm build` ✅
+
+### 3.17 Unit Tests
+- [ ] Setup test infrastructure:
+  - [ ] Install Vitest (or Jest) + test utilities
+  - [ ] Configure test scripts in `package.json`
+  - [ ] Create `test/` directory structure mirroring `src/`
+  - [ ] Create shared mocks for Redis, S3, pg, BullMQ
+- [ ] Transform Tests (pure logic — no mocks needed):
+  - [ ] `validation.spec.ts`:
+    - [ ] Should push valid rows with all 4 required fields
+    - [ ] Should skip rows missing `provider`
+    - [ ] Should skip rows missing `eventId`
+    - [ ] Should skip rows missing `timestamp`
+    - [ ] Should skip rows missing `data`
+    - [ ] Should track rowCount and invalidCount in `getStats()`
+    - [ ] Should log summary in `_flush()`
+  - [ ] `formatter.spec.ts`:
+    - [ ] Should format a ValidatedRow as CSV line with newline
+    - [ ] Should escape data containing commas (wrap in quotes)
+    - [ ] Should escape data containing double quotes (double them)
+    - [ ] Should escape data containing newlines
+    - [ ] Should not wrap data without special characters
+- [ ] Service Tests (mocked dependencies):
+  - [ ] `storage.service.spec.ts`:
+    - [ ] Should upload stream to S3 bucket with correct key
+    - [ ] Should download object and return Readable stream
+    - [ ] Should delete object from S3 bucket
+    - [ ] Should propagate S3 errors on upload failure
+    - [ ] Should propagate S3 errors on download failure
+  - [ ] `status.service.spec.ts`:
+    - [ ] Should create status record with TTL in Redis
+    - [ ] Should return parsed JSON for existing uploadId
+    - [ ] Should return null for non-existent uploadId
+    - [ ] Should merge partial updates into existing record
+    - [ ] Should use correct key prefix (`status:<uploadId>`)
+  - [ ] `redis.client.spec.ts`:
+    - [ ] Should create Redis instance with config
+    - [ ] Should call `quit()` on `close()`
+  - [ ] `webhook.queue.spec.ts`:
+    - [ ] Should enqueue job with correct data (uploadId, callbackUrl, payload)
+    - [ ] Should configure retry policy (3 attempts, exponential backoff)
+    - [ ] Should call `queue.close()` on `close()`
+  - [ ] `webhook.worker.spec.ts`:
+    - [ ] Should POST payload to callbackUrl with JSON content-type
+    - [ ] Should throw on non-OK HTTP response (triggers BullMQ retry)
+    - [ ] Should log on completed/failed events
+  - [ ] `memory.spec.ts`:
+    - [ ] Should start interval with configured ms
+    - [ ] Should stop and clear interval on `stop()`
+    - [ ] Should warn when heap usage exceeds 400MB
+    - [ ] Should log normal usage below 400MB
+  - [ ] `database.service.spec.ts`:
+    - [ ] Should create COPY stream from pool client
+    - [ ] Should release client on `done()`
+    - [ ] Should close pool on `close()`
+- [ ] Route Tests (Fastify inject — integration-style):
+  - [ ] `routes/upload.spec.ts`:
+    - [ ] Should return 202 with uploadId on successful upload
+    - [ ] Should return 400 when no file is uploaded
+    - [ ] Should return 400 for invalid callbackUrl format
+    - [ ] Should return 500 when S3 upload fails
+    - [ ] Should create status record with callbackUrl
+  - [ ] `routes/process.spec.ts`:
+    - [ ] Should return 200 with rowsProcessed/rowsInvalid on success
+    - [ ] Should update status to processing → completed
+    - [ ] Should delete S3 object after successful processing
+    - [ ] Should enqueue webhook callback when callbackUrl exists
+    - [ ] Should return 500 and update status to failed on pipeline error
+    - [ ] Should release pg client on error (cleanup)
+  - [ ] `routes/status.spec.ts`:
+    - [ ] Should return 200 with status record (excluding callbackUrl)
+    - [ ] Should return 404 when uploadId not found
+- [ ] Run test coverage:
+  - [ ] `pnpm test:cov` — verify thresholds (target: 80%+ overall)
+  - [ ] Review coverage report for untested edge cases
 
 ---
 
