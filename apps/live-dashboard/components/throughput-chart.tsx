@@ -1,40 +1,53 @@
 'use client';
 
 import { useMetricsStore } from "#/store/metrics";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "#/components/ui/chart";
+
+const chartConfig = {
+  rps: {
+    label: "RPS",
+    color: "#10b981",
+  },
+} satisfies ChartConfig;
 
 export function ThroughputChart() {
   const chartData = useMetricsStore((state) => state.chartData);
 
   return (
-    <ResponsiveContainer width="100%" height={350}>
-      <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+    <ChartContainer config={chartConfig} className="flex-1 min-h-0 w-full border border-border">
+      <LineChart data={chartData} margin={{ left: -16 }}>
+        <CartesianGrid vertical={false} />
         <XAxis
           dataKey="time"
-          stroke="#71717a"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
           tick={{ fontSize: 12 }}
         />
         <YAxis
-          stroke="#71717a"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
           tick={{ fontSize: 12 }}
         />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: '#18181b',
-            border: '1px solid #3f3f46',
-            borderRadius: '8px',
-          }}
+        <ChartTooltip
+          content={<ChartTooltipContent indicator="line" />}
         />
         <Line
           type="monotone"
           dataKey="rps"
-          stroke="#10b981"
+          stroke="var(--color-rps)"
           strokeWidth={2}
           dot={false}
           isAnimationActive={false}
         />
       </LineChart>
-    </ResponsiveContainer>
+    </ChartContainer>
   );
 }

@@ -3,20 +3,22 @@
 import { useMetricsStore } from "#/store/metrics";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef } from "react";
+import { ScrollArea } from "#/components/ui/scroll-area";
 
 export function LiveLogStream() {
-  const parentRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const events = useMetricsStore((state) => state.events);
-  
+
   const virtualizer = useVirtualizer({
     count: events.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () =>
+      scrollRef.current?.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]') ?? null,
     estimateSize: () => 64,
   });
-  
+
   return (
-    <div ref={parentRef} className="h-[350px] overflow-auto">
+    <ScrollArea ref={scrollRef} className="flex-1 min-h-0 border border-border">
       <div style={{ height: `${virtualizer.getTotalSize()}px` }} className="relative w-full">
         {virtualizer.getVirtualItems().map((virtualRow) => {
           const event = events[virtualRow.index];
@@ -31,19 +33,19 @@ export function LiveLogStream() {
                 height: `${virtualRow.size}px`,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className="flex items-center justify-between px-3 border-b border-zinc-800 text-sm"
+              className="flex items-center justify-between px-3 border-b border-border text-sm"
             >
               <div className="flex items-center gap-3">
-                <span className="text-zinc-500 font-mono text-xs">{event.provider}</span>
-                <span className="text-zinc-300 font-mono truncate max-w-[180px]">
+                <span className="text-muted-foreground font-mono text-xs">{event.provider}</span>
+                <span className="text-foreground font-mono truncate max-w-[180px]">
                   {event.eventId}
                 </span>
               </div>
-              <span className="text-zinc-500 text-xs">{event.processingTime}ms</span>
+              <span className="text-muted-foreground text-xs">{event.processingTime}ms</span>
             </div>
           );
         })}
       </div>
-    </div>
+    </ScrollArea>
   );
 }
