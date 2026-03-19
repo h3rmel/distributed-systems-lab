@@ -15,13 +15,22 @@ Real-time analytics dashboard visualizing webhook ingestion throughput. Built wi
 
 ```mermaid
 flowchart TD
-  subgraph Browser
-    API["Ingestion API :3001"] -->|"Socket.io<br/>job-completed"| SM["SocketManager<br/>(singleton)"]
-    SM -->|"getState().addEvent()"| Store["Zustand Store<br/>events[], chartData[]"]
-    Store --> Chart["ThroughputChart<br/>(1s updates)"]
-    Store --> Logs["LiveLogStream<br/>(TanStack Virtual)"]
-    Store --> Cards["MetricsCards<br/>(500ms poll)"]
+  API["Ingestion API :3001"]
+
+  subgraph browser [Browser]
+    SM["SocketManager<br/>(singleton)"]
+    Store["Zustand Store"]
+    Chart["ThroughputChart<br/>(1s updates)"]
+    Logs["LiveLogStream<br/>(TanStack Virtual)"]
+    Cards["MetricsCards<br/>(500ms poll)"]
+
+    SM -->|"getState().addEvent()"| Store
+    Store --> Chart
+    Store --> Logs
+    Store --> Cards
   end
+
+  API -->|"Socket.io<br/>job-completed"| SM
 ```
 
 ## Components

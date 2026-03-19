@@ -5,9 +5,9 @@ A monorepo of three interconnected production-grade systems demonstrating enterp
 ## Architecture
 
 ```mermaid
-graph TB
-  Dashboard["Live Dashboard<br/>(Next.js 16) :3000"]
+graph LR
   Ingestion["Ingestion API<br/>(NestJS/Fastify) :3001"]
+  Dashboard["Live Dashboard<br/>(Next.js 16) :3000"]
   Stream["Stream API<br/>(Fastify/Streams) :3002"]
   Postgres["PostgreSQL 16<br/>:5432"]
   Redis["Redis 7<br/>:6379"]
