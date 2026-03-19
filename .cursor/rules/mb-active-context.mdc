@@ -8,7 +8,7 @@ globs: **/*
 ## 1. Current Context
 - **Project Type**: Monorepo - "Distributed Systems Lab"
 - **Main Focus**: Three interconnected production-grade systems demonstrating enterprise patterns
-- **Status**: **Phase 1 COMPLETE** - Ingestion API fully implemented. **Phase 3 COMPLETE** - Stream API fully refactored (ADR-0008). **Phase 2 IN PROGRESS** - Live Dashboard core implemented (2.1-2.8), pending Shadcn UI polish (2.9) and Dockerfile (2.10).
+- **Status**: **All phases COMPLETE** — Phase 1 (Ingestion API), Phase 2 (Live Dashboard), Phase 3 (Stream API), Phase 4 (Integration & Documentation).
 
 ## 2. Monorepo Structure
 
@@ -23,23 +23,30 @@ distributed-systems-lab/
 │   ├── dto/               ✅ @distributed-systems-lab/dto
 │   ├── database/          ✅ @distributed-systems-lab/database
 │   └── eslint-config/     ✅ @distributed-systems-lab/eslint-config
+├── tests/
+│   └── e2e/               ✅ Vitest E2E suite (ingestion, streaming, dashboard, failure scenarios)
 ├── docs/
 │   ├── SPEC-INGESTION-API.md  (Source of Truth for Project 1)
 │   ├── SPEC-DASHBOARD.md      (Source of Truth for Project 2)
 │   ├── SPEC-STREAM-API.md     (Source of Truth for Project 3)
-│   └── adr/                   (Architecture Decision Records - 7 ADRs)
+│   ├── BENCHMARKS.md          (Consolidated performance results)
+│   └── adr/                   (Architecture Decision Records - 8 ADRs)
+├── scripts/
+│   ├── reset-dev.sh           ✅ Reset dev environment
+│   └── seed-webhooks.ts       ✅ Seed sample data
 ├── .cursor/rules/
 │   ├── mb-active-context.mdc
 │   ├── mb-commands.mdc
 │   ├── mb-product-context.mdc
 │   ├── mb-system-patterns.mdc
 │   └── mb-tech-stack.mdc
-├── docker-compose.yaml    ✅ PostgreSQL 16 + Redis 7
-├── package.json           ✅ pnpm workspaces monorepo
-├── pnpm-workspace.yaml    ✅ Workspace config
+├── README.md              ✅ Project overview and quick start
+├── docker-compose.yaml    ✅ PostgreSQL 16 + Redis 7 + MinIO + all apps (with healthchecks)
+├── package.json           ✅ pnpm workspaces monorepo (dev, build, test, test:e2e, reset:dev, seed)
+├── pnpm-workspace.yaml    ✅ Workspace config (apps/*, packages/*, tests/*)
 ├── tsconfig.json          ✅ Base TypeScript config (strict)
 ├── .prettierrc            ✅ Code formatting
-└── TODO.md                📋 Implementation roadmap
+└── TODO.md                📋 Implementation roadmap (all phases complete)
 ```
 
 ### Project Naming Convention
@@ -69,6 +76,12 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-03-19 | Docs | Phase 4.3: Comprehensive READMEs for all apps and packages, root README with architecture overview |
+| 2026-03-19 | Test | Phase 4.1: E2E test suite (tests/e2e/) — Vitest, 4 suites: ingestion, streaming, dashboard WebSocket, failure scenarios |
+| 2026-03-19 | Infra | Phase 4: Fix docker-compose healthchecks for ingestion-api and stream-api (were missing) |
+| 2026-03-19 | Infra | Phase 4.4: Root scripts (dev, test, test:e2e, reset:dev, seed), scripts/ directory, pnpm-workspace tests/* |
+| 2026-03-19 | Docs | Phase 4.5: docs/BENCHMARKS.md — consolidated performance results with reproduction commands |
+| 2026-03-19 | Chore | Phase 4.6: Final review — pnpm format across codebase, no tracked secrets, any-type scan clean |
 | 2026-03-16 | Test | Phase 3.17: Stream API unit tests — 60 tests, 98.67% coverage (Vitest + v8), transforms/services/routes |
 | 2026-03-16 | Infra | Phase 2.10: Dockerfile (multi-stage standalone) + docker-compose service for live-dashboard |
 | 2026-03-16 | Refactor | Phase 2.9: Shadcn UI — Card, Chart (ChartContainer/ChartTooltip), ScrollArea components, full-viewport layout, theme tokens |
@@ -224,7 +237,7 @@ distributed-systems-lab/
 - [x] Phase 3.16: OOP Refactor — Manual Composition Root (ADR-0008) ✅
 - [x] Phase 3.17: Unit Tests — 60 tests, 98.67% coverage (Vitest + v8) ✅
 
-### Phase 2: Live Dashboard (Current Focus)
+### Phase 2: Live Dashboard ✅ COMPLETE
 - [x] Phase 2.1: Initialize Next.js 16 with App Router ✅
 - [x] Phase 2.2: Setup Zustand 5 store for metrics ✅
 - [x] Phase 2.3: Implement Socket.io client with reconnection ✅
@@ -235,6 +248,14 @@ distributed-systems-lab/
 - [x] Phase 2.8: Performance testing (Freeze Test) ✅
 - [x] Phase 2.9: Shadcn UI implementation (Card, Chart, ScrollArea, theme tokens) ✅
 - [x] Phase 2.10: Dockerfile + docker-compose integration ✅
+
+### Phase 4: Integration & Documentation ✅ COMPLETE
+- [x] Phase 4.1: E2E test suite (tests/e2e/, Vitest) — ingestion, streaming, dashboard, failure scenarios ✅
+- [x] Phase 4.3: Documentation — root README, 3 app READMEs, 3 package READMEs ✅
+- [x] Phase 4.4: Scripts & automation — dev, test, test:e2e, reset:dev, seed ✅
+- [x] Phase 4.5: Performance benchmarks — docs/BENCHMARKS.md ✅
+- [x] Phase 4.6: Final review — formatting, security, architecture check ✅
+- [x] Infra fix: docker-compose healthchecks for ingestion-api and stream-api ✅
 
 ## 6. Active Architecture Decisions
 
@@ -325,11 +346,13 @@ STREAM_API_PORT=3002
 - `pnpm docker:clean` - Remove volumes + orphans
 
 ## 9. Open Questions / Blockers
-- None. **Phase 1 complete** - All acceptance criteria met:
-  - ✅ Load testing: 0% errors, 7.35ms P95, 499 VUs
-  - ✅ Unit tests: 97%+ coverage, 55 tests passing
-  - ✅ Docker containerization complete
-  
-**Current:** All three core projects fully implemented and tested.  
-**Completed:** Phase 1 (Ingestion API, 97%+ cov), Phase 2 (Live Dashboard), Phase 3 (Stream API, 98.67% cov).  
-**Next:** Phase 4 — Integration & Documentation.
+- None. **All phases complete.**
+
+**Completed:**
+- Phase 0: Foundation (monorepo, Docker, shared packages)
+- Phase 1: Ingestion API (97%+ coverage, 0% errors at 500 VUs)
+- Phase 2: Live Dashboard (60 FPS under 200 VU load)
+- Phase 3: Stream API (98.67% coverage, 57 MB avg for 5M rows)
+- Phase 4: Integration & Documentation (E2E tests, READMEs, benchmarks, scripts)
+
+**Remaining (optional):** Deployment Checklist — Docker production images, Kubernetes manifests, CI/CD pipeline.
