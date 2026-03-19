@@ -13,27 +13,15 @@ Real-time analytics dashboard visualizing webhook ingestion throughput. Built wi
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│  Browser                                         │
-│                                                  │
-│  ┌──────────────┐   Socket.io    ┌────────────┐ │
-│  │ SocketManager │◄──────────────│ Ingestion   │ │
-│  │ (singleton)   │  job-completed│ API :3001   │ │
-│  └──────┬───────┘               └────────────┘ │
-│         │ getState().addEvent()                  │
-│         ▼                                        │
-│  ┌──────────────┐                                │
-│  │ Zustand Store │  events[], chartData[]         │
-│  │ (metrics.ts)  │                                │
-│  └──┬────┬───┬──┘                                │
-│     │    │   │                                    │
-│     ▼    ▼   ▼                                    │
-│  ┌────┐┌────────────┐┌──────────────┐            │
-│  │Chart││LiveLogStream││MetricsCards  │            │
-│  │1/s  ││(TanStack V.) ││(500ms poll) │            │
-│  └────┘└────────────┘└──────────────┘            │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+  subgraph Browser
+    API["Ingestion API :3001"] -->|"Socket.io<br/>job-completed"| SM["SocketManager<br/>(singleton)"]
+    SM -->|"getState().addEvent()"| Store["Zustand Store<br/>events[], chartData[]"]
+    Store --> Chart["ThroughputChart<br/>(1s updates)"]
+    Store --> Logs["LiveLogStream<br/>(TanStack Virtual)"]
+    Store --> Cards["MetricsCards<br/>(500ms poll)"]
+  end
 ```
 
 ## Components

@@ -14,36 +14,15 @@ High-throughput webhook ingestion system built with NestJS 11 + FastifyAdapter +
 
 ## Architecture
 
-```
-HTTP POST /webhooks/:provider
-    │
-    ▼
-┌─────────────────────┐
-│  WebhookController   │  Validates DTO, returns 202
-│  (ValidationPipe)    │
-└──────────┬──────────┘
-           │ enqueue
-           ▼
-┌─────────────────────┐     ┌─────────────────────┐
-│  BullMQ Queue        │────►│  WebhookProcessor    │
-│  (Redis-backed)      │     │  (Background Worker)  │
-└─────────────────────┘     └──────────┬──────────┘
-                                       │
-                            ┌──────────▼──────────┐
-                            │  IdempotencyService   │
-                            │  (Redis 24h TTL)      │
-                            └──────────┬──────────┘
-                                       │ if new
-                                       ▼
-                            ┌─────────────────────┐
-                            │  PostgreSQL           │
-                            │  (Drizzle ORM)        │
-                            └─────────────────────┘
-                                       │
-                            ┌──────────▼──────────┐
-                            │  MetricsGateway       │
-                            │  (Socket.io → Dashboard)│
-                            └─────────────────────┘
+```mermaid
+flowchart TD
+  HTTP["HTTP POST /webhooks/:provider"] --> Controller["WebhookController<br/>(ValidationPipe)"]
+  Controller -->|enqueue| Queue["BullMQ Queue<br/>(Redis-backed)"]
+  Queue --> Processor["WebhookProcessor<br/>(Background Worker)"]
+  Processor --> Idempotency["IdempotencyService<br/>(Redis 24h TTL)"]
+  Idempotency -->|if new| Postgres["PostgreSQL<br/>(Drizzle ORM)"]
+  Postgres --> Gateway["MetricsGateway<br/>(Socket.io)"]
+  Gateway -->|job-completed| Dashboard["Live Dashboard"]
 ```
 
 ## Modules

@@ -13,33 +13,19 @@ Memory-safe batch data ingestion API. Processes multi-GB CSV files in a 512 MB c
 
 ## Architecture
 
-```
-                  ┌─────────────┐
-  HTTP multipart  │   Upload    │   S3 streaming
-  ───────────────►│   Route     │──────────────►  MinIO
-                  └─────────────┘
+```mermaid
+flowchart LR
+  subgraph stage1 [Stage 1: Upload]
+    Upload["HTTP multipart"] --> UploadRoute["Upload Route"] --> MinIO["MinIO (S3)"]
+  end
 
-                  ┌─────────────┐
-  POST /process   │   Process   │
-  ───────────────►│   Route     │
-                  └──────┬──────┘
-                         │
-         ┌───────────────┼───────────────┐
-         ▼               ▼               ▼
-  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-  │ S3 Download  │ │ CSV Parser   │ │ Validation   │
-  │ (Readable)   │►│ (fast-csv)   │►│ Transform    │
-  └─────────────┘ └─────────────┘ └──────┬──────┘
-                                         │
-                                  ┌──────▼──────┐
-                                  │ Formatter    │
-                                  │ Transform    │
-                                  └──────┬──────┘
-                                         │
-                                  ┌──────▼──────┐
-                                  │ Postgres     │
-                                  │ COPY Stream  │
-                                  └─────────────┘
+  subgraph stage2 [Stage 2: Process]
+    Process["POST /process"] --> S3["S3 Download<br/>(Readable)"]
+    S3 --> CSV["CSV Parser<br/>(fast-csv)"]
+    CSV --> Validation["ValidationTransform"]
+    Validation --> Formatter["FormatterTransform"]
+    Formatter --> PG["Postgres<br/>COPY Stream"]
+  end
 ```
 
 **Pipeline:** `stream.pipeline(s3Stream, csvParser, validationTransform, formatterTransform, pgCopyStream)`

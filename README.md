@@ -4,25 +4,21 @@ A monorepo of three interconnected production-grade systems demonstrating enterp
 
 ## Architecture
 
-```
-┌──────────────────┐    WebSocket     ┌──────────────────┐
-│  Live Dashboard   │◄────────────────│  Ingestion API   │
-│  (Next.js 16)     │  job-completed  │  (NestJS/Fastify) │
-│  :3000            │                 │  :3001            │
-└──────────────────┘                 └────────┬─────────┘
-                                              │ BullMQ
-                                              ▼
-┌──────────────────┐                 ┌──────────────────┐
-│  Stream API       │────────────────│  PostgreSQL 16    │
-│  (Fastify/Streams)│   COPY proto   │  :5432            │
-│  :3002            │                └──────────────────┘
-└────────┬─────────┘                 ┌──────────────────┐
-         │ S3 streaming              │  Redis 7          │
-         ▼                           │  :6379            │
-┌──────────────────┐                 └──────────────────┘
-│  MinIO (S3)       │
-│  :9000            │
-└──────────────────┘
+```mermaid
+graph TB
+  Dashboard["Live Dashboard<br/>(Next.js 16) :3000"]
+  Ingestion["Ingestion API<br/>(NestJS/Fastify) :3001"]
+  Stream["Stream API<br/>(Fastify/Streams) :3002"]
+  Postgres["PostgreSQL 16<br/>:5432"]
+  Redis["Redis 7<br/>:6379"]
+  MinIO["MinIO (S3)<br/>:9000"]
+
+  Ingestion -->|"WebSocket<br/>job-completed"| Dashboard
+  Ingestion -->|BullMQ| Redis
+  Ingestion -->|"Drizzle ORM"| Postgres
+  Stream -->|"COPY protocol"| Postgres
+  Stream -->|"S3 streaming"| MinIO
+  Stream -->|ioredis| Redis
 ```
 
 | System | Purpose | Key Metric |
