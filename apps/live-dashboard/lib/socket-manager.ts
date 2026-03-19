@@ -1,5 +1,5 @@
-import { Socket } from "socket.io-client";
-import { createSocket } from "#/lib/socket";
+import { Socket } from 'socket.io-client';
+import { createSocket } from '#/lib/socket';
 
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected';
 

@@ -20,17 +20,15 @@ export class WebhookWorker {
         concurrency: 1,
         removeOnComplete: { count: 100 },
         removeOnFail: { count: 500 },
-      }
+      },
     );
-    
+
     this.worker.on('completed', (job) => {
       console.log(`Webhook job ${job?.id} completed for uploadId=${job?.data.uploadId}`);
     });
-    
+
     this.worker.on('failed', (job, error) => {
-      console.log(
-        `Webhook job ${job?.id} failed (attempt ${job?.attemptsMade}): ${error.message}`,
-      );
+      console.log(`Webhook job ${job?.id} failed (attempt ${job?.attemptsMade}): ${error.message}`);
     });
   }
 

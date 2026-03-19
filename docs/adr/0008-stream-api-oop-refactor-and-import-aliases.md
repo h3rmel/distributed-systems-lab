@@ -68,15 +68,15 @@ Add `baseUrl` and `paths` to `apps/stream-api/tsconfig.json`:
 
 Convert standalone functions with module-level singletons into classes with explicit lifecycle management:
 
-| Class | Replaces | Injected Dependencies |
-|-------|----------|-----------------------|
-| `StorageService` | `storage/*.ts` (4 files) | S3 config (env-based) |
-| `RedisClient` | `redis.client.ts` | Redis config (env-based) |
-| `StatusService` | `status.service.ts` | `RedisClient` |
-| `WebhookQueue` | `webhook.queue.ts` | Redis config |
-| `WebhookWorker` | `webhook.worker.ts` | Redis config |
-| `DatabaseService` | `postgres-writer.ts` | DB config (env-based) |
-| `MemoryMonitor` | `memory.ts` | Interval config |
+| Class             | Replaces                 | Injected Dependencies    |
+| ----------------- | ------------------------ | ------------------------ |
+| `StorageService`  | `storage/*.ts` (4 files) | S3 config (env-based)    |
+| `RedisClient`     | `redis.client.ts`        | Redis config (env-based) |
+| `StatusService`   | `status.service.ts`      | `RedisClient`            |
+| `WebhookQueue`    | `webhook.queue.ts`       | Redis config             |
+| `WebhookWorker`   | `webhook.worker.ts`      | Redis config             |
+| `DatabaseService` | `postgres-writer.ts`     | DB config (env-based)    |
+| `MemoryMonitor`   | `memory.ts`              | Interval config          |
 
 **DI strategy:** Manual composition root in `server.ts`. No DI framework.
 

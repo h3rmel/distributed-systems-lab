@@ -28,12 +28,7 @@ export class StatusService {
       createdAt: new Date().toISOString(),
     };
 
-    await this.redis.set(
-      this.buildKey(uploadId),
-      JSON.stringify(record),
-      'EX',
-      STATUS_TTL_SECONDS,
-    );
+    await this.redis.set(this.buildKey(uploadId), JSON.stringify(record), 'EX', STATUS_TTL_SECONDS);
 
     return record;
   }
@@ -44,10 +39,7 @@ export class StatusService {
    *
    * @throws Error if uploadId does not exist in Redis
    */
-  async update(
-    uploadId: string,
-    update: Partial<JobStatusRecord>,
-  ): Promise<JobStatusRecord> {
+  async update(uploadId: string, update: Partial<JobStatusRecord>): Promise<JobStatusRecord> {
     const key = this.buildKey(uploadId);
     const raw = await this.redis.get(key);
 
@@ -79,7 +71,7 @@ export class StatusService {
 
     return JSON.parse(raw) as JobStatusRecord;
   }
-  
+
   /** Builds the Redis key for a given uploadId. */
   private buildKey(uploadId: string): string {
     return `${STATUS_KEY_PREFIX}${uploadId}`;

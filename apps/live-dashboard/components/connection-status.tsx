@@ -1,4 +1,4 @@
-import { ConnectionState } from "#/lib/socket-manager";
+import { ConnectionState } from '#/lib/socket-manager';
 
 const config: Record<ConnectionState, { color: string; label: string }> = {
   connected: { color: 'bg-emerald-500', label: 'Connected' },

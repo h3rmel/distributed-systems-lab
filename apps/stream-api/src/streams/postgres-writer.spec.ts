@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Writable } from 'node:stream';
 
-const mockCopyStream = new Writable({ write(_chunk, _enc, cb) { cb(); } });
+const mockCopyStream = new Writable({
+  write(_chunk, _enc, cb) {
+    cb();
+  },
+});
 const releaseMock = vi.fn();
 const endMock = vi.fn().mockResolvedValue(undefined);
 const connectMock = vi.fn().mockResolvedValue({

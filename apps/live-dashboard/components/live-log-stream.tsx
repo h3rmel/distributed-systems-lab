@@ -1,9 +1,9 @@
 'use client';
 
-import { useMetricsStore } from "#/store/metrics";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { useRef } from "react";
-import { ScrollArea } from "#/components/ui/scroll-area";
+import { useMetricsStore } from '#/store/metrics';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useRef } from 'react';
+import { ScrollArea } from '#/components/ui/scroll-area';
 
 export function LiveLogStream() {
   const scrollRef = useRef<HTMLDivElement>(null);

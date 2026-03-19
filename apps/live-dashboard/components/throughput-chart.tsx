@@ -1,18 +1,18 @@
 'use client';
 
-import { useMetricsStore } from "#/store/metrics";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { useMetricsStore } from '#/store/metrics';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "#/components/ui/chart";
+} from '#/components/ui/chart';
 
 const chartConfig = {
   rps: {
-    label: "RPS",
-    color: "#10b981",
+    label: 'RPS',
+    color: '#10b981',
   },
 } satisfies ChartConfig;
 
@@ -30,15 +30,8 @@ export function ThroughputChart() {
           tickMargin={8}
           tick={{ fontSize: 12 }}
         />
-        <YAxis
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tick={{ fontSize: 12 }}
-        />
-        <ChartTooltip
-          content={<ChartTooltipContent indicator="line" />}
-        />
+        <YAxis tickLine={false} axisLine={false} tickMargin={8} tick={{ fontSize: 12 }} />
+        <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
         <Line
           type="monotone"
           dataKey="rps"

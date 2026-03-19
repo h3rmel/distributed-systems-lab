@@ -1,5 +1,5 @@
-import { JobCompletedEvent } from "@distributed-systems-lab/dto";
-import { create } from "zustand";
+import { JobCompletedEvent } from '@distributed-systems-lab/dto';
+import { create } from 'zustand';
 
 export interface MetricsStore {
   events: JobCompletedEvent[];
@@ -16,9 +16,10 @@ export const useMetricsStore = create<MetricsStore>((set, get) => ({
   events: [],
   chartData: [],
 
-  addEvent: (event) => set((state) => ({
-    events: [event, ...state.events].slice(0, 100),
-  })),
+  addEvent: (event) =>
+    set((state) => ({
+      events: [event, ...state.events].slice(0, 100),
+    })),
 
   computeRPS: () => {
     const now = Date.now();

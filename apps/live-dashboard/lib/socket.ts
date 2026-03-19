@@ -1,7 +1,7 @@
-import { useMetricsStore } from "#/store/metrics";
-import { JobCompletedEvent } from "@distributed-systems-lab/dto";
-import { SocketEvents } from "@distributed-systems-lab/dto";
-import { io, Socket } from "socket.io-client";
+import { useMetricsStore } from '#/store/metrics';
+import { JobCompletedEvent } from '@distributed-systems-lab/dto';
+import { SocketEvents } from '@distributed-systems-lab/dto';
+import { io, Socket } from 'socket.io-client';
 
 export function createSocket(): Socket {
   const socket = io(process.env.NEXT_PUBLIC_API_URL!, {

@@ -24,7 +24,7 @@ export class WebhookQueue {
         removeOnComplete: true,
         removeOnFail: false,
       },
-    })
+    });
   }
 
   /**

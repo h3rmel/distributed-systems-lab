@@ -29,7 +29,7 @@ export class StorageService {
         secretAccessKey: config.secretAccessKey,
       },
       forcePathStyle: true, // Required for MinIO
-    })
+    });
   }
 
   /**
@@ -51,7 +51,7 @@ export class StorageService {
         Key: objectKey,
         Body: fileStream,
         ContentType: 'text/csv',
-      }
+      },
     });
 
     const result = await upload.done();
@@ -59,7 +59,7 @@ export class StorageService {
     return {
       location: result.Location ?? `${this.bucket}/${objectKey}`,
       etag: result.ETag,
-    }
+    };
   }
 
   /**
@@ -76,7 +76,7 @@ export class StorageService {
     });
 
     const response = await this.client.send(command);
-    
+
     if (!response.Body) {
       throw new Error(`Empty response body for object: ${objectKey}`);
     }

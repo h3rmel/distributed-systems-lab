@@ -43,8 +43,7 @@ export function MetricsCards({ connectionState }: MetricsCardsProps) {
 
   return (
     <>
-    {
-      cards.map(({ label, value, unit }) => (
+      {cards.map(({ label, value, unit }) => (
         <div className="flex flex-col flex-1/4 border-r p-4" key={label}>
           <p className="text-xs mb-1">{label}</p>
           <p className="text-2xl font-semibold text-zinc-100">
@@ -52,14 +51,13 @@ export function MetricsCards({ connectionState }: MetricsCardsProps) {
             {unit && <span className="text-sm ml-1">{unit}</span>}
           </p>
         </div>
-      ))
-    }
-    <div className="flex flex-col flex-1/4 p-4">
-      <p className="text-xs mb-1">Connection</p>
+      ))}
+      <div className="flex flex-col flex-1/4 p-4">
+        <p className="text-xs mb-1">Connection</p>
         <p className={`text-lg font-semibold capitalize ${connectionColors[connectionState]}`}>
           {connectionState}
         </p>
-    </div>
+      </div>
     </>
   );
 }

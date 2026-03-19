@@ -38,7 +38,12 @@ describe('WebhookWorker', () => {
       data: {
         uploadId: 'upload-1',
         callbackUrl: 'http://example.com/webhook',
-        payload: { uploadId: 'upload-1', status: 'completed', rowsProcessed: 50, timestamp: '2026-01-01T00:00:00Z' },
+        payload: {
+          uploadId: 'upload-1',
+          status: 'completed',
+          rowsProcessed: 50,
+          timestamp: '2026-01-01T00:00:00Z',
+        },
       },
     };
 
@@ -53,13 +58,20 @@ describe('WebhookWorker', () => {
 
   it('should throw on non-OK HTTP response', async () => {
     const fetchMock = vi.mocked(globalThis.fetch);
-    fetchMock.mockResolvedValueOnce(new Response('Not Found', { status: 404, statusText: 'Not Found' }));
+    fetchMock.mockResolvedValueOnce(
+      new Response('Not Found', { status: 404, statusText: 'Not Found' }),
+    );
 
     const job = {
       data: {
         uploadId: 'upload-1',
         callbackUrl: 'http://example.com/webhook',
-        payload: { uploadId: 'upload-1', status: 'failed', rowsProcessed: 0, timestamp: '2026-01-01T00:00:00Z' },
+        payload: {
+          uploadId: 'upload-1',
+          status: 'failed',
+          rowsProcessed: 0,
+          timestamp: '2026-01-01T00:00:00Z',
+        },
       },
     };
 
@@ -80,7 +92,10 @@ describe('WebhookWorker', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const handler = eventHandlers.get('failed');
 
-    handler!({ id: 'job-99', attemptsMade: 2, data: { uploadId: 'upload-1' } }, new Error('timeout'));
+    handler!(
+      { id: 'job-99', attemptsMade: 2, data: { uploadId: 'upload-1' } },
+      new Error('timeout'),
+    );
 
     expect(spy).toHaveBeenCalledWith(expect.stringContaining('job-99'));
     spy.mockRestore();

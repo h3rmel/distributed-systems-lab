@@ -96,7 +96,9 @@ describe('Process Routes', () => {
 
     await app.inject({ method: 'POST', url: '/upload/upload-1/process' });
 
-    const statusCalls = updateMock.mock.calls.map((c: unknown[]) => (c[1] as { status: string }).status);
+    const statusCalls = updateMock.mock.calls.map(
+      (c: unknown[]) => (c[1] as { status: string }).status,
+    );
     expect(statusCalls).toContain('processing');
     expect(statusCalls).toContain('completed');
   });
