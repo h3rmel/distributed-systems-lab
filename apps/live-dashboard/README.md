@@ -1,36 +1,135 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Live Dashboard
 
-## Getting Started
+Real-time analytics dashboard visualizing webhook ingestion throughput. Built with Next.js 16 (App Router), Zustand 5, Socket.io, and Recharts. Renders 100+ events/sec without UI freeze.
 
-First, run the development server:
+## KPIs
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Metric                 | Target    | Achieved                              |
+| ---------------------- | --------- | ------------------------------------- |
+| Rendering FPS          | 60 FPS    | Maintained under 200 VU load          |
+| Event-to-Pixel Latency | < 200ms   | Met                                   |
+| CPU Under Load         | < 70%     | Met                                   |
+| Socket Reconnection    | Automatic | Exponential backoff, infinite retries |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│  Browser                                         │
+│                                                  │
+│  ┌──────────────┐   Socket.io    ┌────────────┐ │
+│  │ SocketManager │◄──────────────│ Ingestion   │ │
+│  │ (singleton)   │  job-completed│ API :3001   │ │
+│  └──────┬───────┘               └────────────┘ │
+│         │ getState().addEvent()                  │
+│         ▼                                        │
+│  ┌──────────────┐                                │
+│  │ Zustand Store │  events[], chartData[]         │
+│  │ (metrics.ts)  │                                │
+│  └──┬────┬───┬──┘                                │
+│     │    │   │                                    │
+│     ▼    ▼   ▼                                    │
+│  ┌────┐┌────────────┐┌──────────────┐            │
+│  │Chart││LiveLogStream││MetricsCards  │            │
+│  │1/s  ││(TanStack V.) ││(500ms poll) │            │
+│  └────┘└────────────┘└──────────────┘            │
+└─────────────────────────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Components
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Component          | File                               | Purpose                                            |
+| ------------------ | ---------------------------------- | -------------------------------------------------- |
+| `Home`             | `app/page.tsx`                     | Page shell — socket lifecycle, 1s chart timer      |
+| `ConnectionStatus` | `components/connection-status.tsx` | Green/yellow/red dot + label                       |
+| `ThroughputChart`  | `components/throughput-chart.tsx`  | Recharts LineChart (60 data points, 1s updates)    |
+| `LiveLogStream`    | `components/live-log-stream.tsx`   | TanStack Virtual list (last 100 events, 64px rows) |
+| `MetricsCards`     | `components/metrics-cards.tsx`     | RPS, total events, avg processing time, connection |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Shadcn UI Components
 
-## Learn More
+| Component                                 | Path                            |
+| ----------------------------------------- | ------------------------------- |
+| Card, CardHeader, CardContent, CardFooter | `components/ui/card.tsx`        |
+| ChartContainer, ChartTooltip              | `components/ui/chart.tsx`       |
+| ScrollArea, ScrollBar                     | `components/ui/scroll-area.tsx` |
 
-To learn more about Next.js, take a look at the following resources:
+## State Management (Zustand)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```typescript
+interface MetricsStore {
+  events: JobCompletedEvent[]; // Last 100 events (newest first)
+  chartData: { time: string; rps: number }[]; // Last 60 samples
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  addEvent(event: JobCompletedEvent): void; // Prepend + slice(0, 100)
+  computeRPS(): number; // Count events in last 1s
+  pushChartPoint(): void; // Append { time, rps }
+}
+```
 
-## Deploy on Vercel
+**Update strategy:**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `addEvent` is called from the socket listener (outside React) — no re-render per event.
+- `pushChartPoint` runs every 1s via `setInterval` in the page component.
+- `MetricsCards` polls `getState()` every 500ms — avoids subscription re-renders.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Socket.io Integration
+
+| File                    | Purpose                                                                     |
+| ----------------------- | --------------------------------------------------------------------------- |
+| `lib/socket.ts`         | Socket factory + `job-completed` listener wired to store                    |
+| `lib/socket-manager.ts` | Singleton with `connect()`, `disconnect()`, `getState()`, `onStateChange()` |
+
+**Connection config:** `reconnectionDelay: 1000`, `reconnectionDelayMax: 5000`, `reconnectionAttempts: Infinity`.
+
+**Event payload:** `JobCompletedEvent { jobId, eventId, provider, processingTime, timestamp }`
+
+## Configuration
+
+| Variable              | Required | Description                                                    |
+| --------------------- | -------- | -------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Yes      | Ingestion API URL for Socket.io (e.g. `http://localhost:3001`) |
+
+## Development
+
+```bash
+# Prerequisites: Ingestion API running on :3001
+cd apps/live-dashboard
+
+# Watch mode
+pnpm dev
+
+# Build
+pnpm build
+
+# Production start
+pnpm start
+```
+
+## Docker
+
+```bash
+# Via docker compose (builds with NEXT_PUBLIC_API_URL=http://localhost:3001)
+docker compose up live-dashboard
+
+# Standalone
+docker build -f apps/live-dashboard/Dockerfile \
+  --build-arg NEXT_PUBLIC_API_URL=http://localhost:3001 \
+  -t live-dashboard .
+```
+
+Multi-stage Dockerfile: `node:24-alpine`, standalone output mode, healthcheck on port 3000.
+
+**Note:** `NEXT_PUBLIC_API_URL` is baked at build time (Next.js static replacement).
+
+## Performance Patterns
+
+1. **Zustand over React Context** — Socket events update store outside React, avoiding re-render storms.
+2. **Throttled chart updates** — Chart reads state every 1s, not per-event.
+3. **TanStack Virtual** — Only visible rows are rendered in the event log (~5-6 at a time).
+4. **`isAnimationActive={false}`** — Recharts animations disabled to reduce CPU.
+5. **`getState()` polling** — MetricsCards avoids Zustand subscription, polls at 500ms.
+
+## Key Decisions
+
+- [ADR-0004: Zustand over React Context](../../docs/adr/0004-use-zustand-over-react-context-for-high-frequency-updates.md)

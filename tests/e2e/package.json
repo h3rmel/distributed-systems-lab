@@ -1,0 +1,19 @@
+{
+  "name": "tests-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@distributed-systems-lab/dto": "workspace:*"
+  },
+  "devDependencies": {
+    "postgres": "^3.4.8",
+    "socket.io-client": "^4.8.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}

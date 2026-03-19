@@ -1,98 +1,183 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Ingestion API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+High-throughput webhook ingestion system built with NestJS 11 + FastifyAdapter + BullMQ. Accepts webhooks from payment providers, queues them asynchronously, and persists to PostgreSQL with idempotency guarantees.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## KPIs
 
-## Description
+| Metric             | Target  | Achieved                       |
+| ------------------ | ------- | ------------------------------ |
+| Virtual Users      | 500     | 499                            |
+| Error Rate         | < 1%    | **0.00%**                      |
+| P95 Latency        | < 100ms | **7.35ms**                     |
+| Data Consistency   | 100%    | **184,849 req = 184,849 rows** |
+| Unit Test Coverage | 80%+    | **97.77%**                     |
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Architecture
 
-## Project setup
-
-```bash
-$ pnpm install
+```
+HTTP POST /webhooks/:provider
+    │
+    ▼
+┌─────────────────────┐
+│  WebhookController   │  Validates DTO, returns 202
+│  (ValidationPipe)    │
+└──────────┬──────────┘
+           │ enqueue
+           ▼
+┌─────────────────────┐     ┌─────────────────────┐
+│  BullMQ Queue        │────►│  WebhookProcessor    │
+│  (Redis-backed)      │     │  (Background Worker)  │
+└─────────────────────┘     └──────────┬──────────┘
+                                       │
+                            ┌──────────▼──────────┐
+                            │  IdempotencyService   │
+                            │  (Redis 24h TTL)      │
+                            └──────────┬──────────┘
+                                       │ if new
+                                       ▼
+                            ┌─────────────────────┐
+                            │  PostgreSQL           │
+                            │  (Drizzle ORM)        │
+                            └─────────────────────┘
+                                       │
+                            ┌──────────▼──────────┐
+                            │  MetricsGateway       │
+                            │  (Socket.io → Dashboard)│
+                            └─────────────────────┘
 ```
 
-## Compile and run the project
+## Modules
 
-```bash
-# development
-$ pnpm run start
+| Module           | Responsibility                                                         |
+| ---------------- | ---------------------------------------------------------------------- |
+| `AppModule`      | Root module, ConfigModule, LoggerModule (nestjs-pino), BullModule      |
+| `DatabaseModule` | Drizzle ORM + PostgreSQL connection pool (`DATABASE_CONNECTION` token) |
+| `QueueModule`    | BullMQ queue registration (`webhooks`) with retry/backoff config       |
+| `WebhookModule`  | Controller + Service for webhook ingestion (HTTP 202 + enqueue)        |
+| `WorkerModule`   | BullMQ Processor + IdempotencyService (Redis dedup with 24h TTL)       |
+| `HealthModule`   | Terminus health checks: database, Redis, memory heap                   |
+| `MetricsModule`  | Socket.io WebSocket gateway — emits `job-completed` events             |
 
-# watch mode
-$ pnpm run start:dev
+## API Reference
 
-# production mode
-$ pnpm run start:prod
+### `POST /webhooks/:provider`
+
+Ingest a webhook event for asynchronous processing.
+
+**Request:**
+
+```json
+{
+  "eventId": "evt_abc123",
+  "timestamp": "2026-01-01T00:00:00.000Z",
+  "data": { "type": "payment_intent.succeeded", "amount": 4200 }
+}
 ```
 
-## Run tests
+**Response:** `202 Accepted`
 
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+```json
+{
+  "accepted": true,
+  "jobId": "1"
+}
 ```
 
-## Deployment
+### `GET /health`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Terminus health check (database, Redis, memory heap).
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+**Response:** `200 OK`
 
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+```json
+{
+  "status": "ok",
+  "info": {
+    "database": { "status": "up" },
+    "redis": { "status": "up" },
+    "memory_heap": { "status": "up" }
+  }
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## WebSocket Events
 
-## Resources
+| Event           | Direction       | Payload                                                   |
+| --------------- | --------------- | --------------------------------------------------------- |
+| `job-completed` | Server → Client | `{ jobId, eventId, provider, processingTime, timestamp }` |
 
-Check out a few resources that may come in handy when working with NestJS:
+Connect via Socket.io to the API base URL (port 3001).
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Configuration
 
-## Support
+| Variable                     | Default                 | Description                         |
+| ---------------------------- | ----------------------- | ----------------------------------- |
+| `PORT`                       | `3001`                  | HTTP listen port                    |
+| `DB_HOST`                    | —                       | PostgreSQL host (required)          |
+| `DB_PORT`                    | —                       | PostgreSQL port (required)          |
+| `DB_USER`                    | —                       | PostgreSQL user (required)          |
+| `DB_PASSWORD`                | —                       | PostgreSQL password (required)      |
+| `DB_NAME`                    | —                       | PostgreSQL database (required)      |
+| `REDIS_HOST`                 | `localhost`             | Redis host                          |
+| `REDIS_PORT`                 | `6379`                  | Redis port                          |
+| `ALLOWED_ORIGINS`            | `http://localhost:3000` | CORS origins (comma-separated)      |
+| `RATE_LIMIT_MAX`             | `100`                   | Max requests per minute             |
+| `DISABLE_WEBHOOK_RATE_LIMIT` | `false`                 | Bypass rate limit for `/webhooks/*` |
+| `LOG_LEVEL`                  | `info`                  | Pino log level                      |
+| `NODE_ENV`                   | `development`           | `production` disables pino-pretty   |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Development
 
-## Stay in touch
+```bash
+# Prerequisites: Docker services running
+pnpm docker:up
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# Watch mode
+pnpm dev
 
-## License
+# Build
+pnpm build
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Start production
+pnpm start:prod
+```
+
+## Testing
+
+```bash
+# Unit tests (Jest)
+pnpm test
+
+# Coverage report
+pnpm test:cov
+
+# E2E tests (requires running services)
+pnpm test:e2e
+
+# K6 load test (requires k6 v1.5+)
+pnpm test:load
+```
+
+### Test Structure
+
+- **Unit tests** (`src/**/*.spec.ts`): 11 files, 55 tests — Jest + `@nestjs/testing`
+- **E2E tests** (`test/*.e2e-spec.ts`): App routes, WebSocket gateway flow
+- **Load tests** (`test/load-test.ts`): K6, 500 VUs, ramp profile
+
+## Docker
+
+```bash
+# Build and run via docker compose
+docker compose up ingestion-api
+
+# Standalone build
+docker build -f apps/ingestion-api/Dockerfile -t ingestion-api .
+```
+
+Multi-stage Dockerfile: `node:24-alpine`, pnpm workspace install, NestJS build, production-only deps.
+
+## Key Decisions
+
+- [ADR-0001: FastifyAdapter over ExpressAdapter](../../docs/adr/0001-use-fastify-adapter-over-express.md)
+- [ADR-0002: Queue-Based Asynchronous Processing](../../docs/adr/0002-queue-based-asynchronous-processing.md)
+- [ADR-0003: Drizzle ORM over TypeORM/Prisma](../../docs/adr/0003-use-drizzle-orm-over-typeorm-prisma.md)
