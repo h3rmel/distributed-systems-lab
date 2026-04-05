@@ -1,11 +1,17 @@
 import { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
+import type { UploadRouteDeps } from '#/composition/route-deps';
 
 /**
  * Upload routes for CSV file ingestion.
  * Stage 1: HTTP → Object Storage (S3/MinIO)
  */
-export async function uploadRoutes(app: FastifyInstance): Promise<void> {
+export async function uploadRoutes(
+  app: FastifyInstance,
+  deps: UploadRouteDeps,
+): Promise<void> {
+  const { storageService, statusService } = deps;
+
   /**
    * POST /upload?callbackUrl=https://example.com/web
    * Accepts multipart file upload and streams directly to S3.
@@ -36,10 +42,10 @@ export async function uploadRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       // 3. Stream HTTP file directly to S3 (no disk, no memory)
-      const result = await app.storageService.upload(data.file, objectKey);
+      const result = await storageService.upload(data.file, objectKey);
 
       // 4. Create initial status record
-      await app.statusService.create(uploadId, objectKey, callbackUrl);
+      await statusService.create(uploadId, objectKey, callbackUrl);
 
       // 5. Return 202 Accepted with tracking info
       return reply.status(202).send({

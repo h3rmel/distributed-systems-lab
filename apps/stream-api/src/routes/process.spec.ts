@@ -1,26 +1,11 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import fastify, { type FastifyInstance } from 'fastify';
 import { Readable, Writable } from 'node:stream';
+import type { StorageService } from '#/storage/storage.service';
+import type { StatusService } from '#/notifications/status.service';
+import type { WebhookQueue } from '#/notifications/webhook.queue';
+import type { DatabaseService } from '#/streams/postgres-writer';
 import { processRoutes } from './process';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    storageService: {
-      download: ReturnType<typeof vi.fn>;
-      delete: ReturnType<typeof vi.fn>;
-    };
-    statusService: {
-      update: ReturnType<typeof vi.fn>;
-      get: ReturnType<typeof vi.fn>;
-    };
-    webhookQueue: {
-      enqueue: ReturnType<typeof vi.fn>;
-    };
-    databaseService: {
-      createCopyStream: ReturnType<typeof vi.fn>;
-    };
-  }
-}
 
 function createMockPgStream(): Writable {
   return new Writable({
@@ -47,12 +32,20 @@ describe('Process Routes', () => {
   beforeAll(async () => {
     app = fastify();
 
-    app.decorate('storageService', { download: downloadMock, delete: deleteMock });
-    app.decorate('statusService', { update: updateMock, get: getMock });
-    app.decorate('webhookQueue', { enqueue: enqueueMock });
-    app.decorate('databaseService', { createCopyStream: createCopyStreamMock });
-
-    await app.register(processRoutes);
+    await processRoutes(app, {
+      storageService: {
+        download: downloadMock,
+        delete: deleteMock,
+      } as unknown as StorageService,
+      statusService: {
+        update: updateMock,
+        get: getMock,
+      } as unknown as StatusService,
+      webhookQueue: { enqueue: enqueueMock } as unknown as WebhookQueue,
+      databaseService: {
+        createCopyStream: createCopyStreamMock,
+      } as unknown as DatabaseService,
+    });
     await app.ready();
   });
 

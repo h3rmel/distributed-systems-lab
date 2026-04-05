@@ -8,6 +8,13 @@ This file is **not** an Architecture Decision Record (ADR). It is a **backlog** 
 
 Code review of `apps/stream-api` focused on **coupling**, **layering**, and **SOLID**, covering `server.ts`, route plugins, storage, Postgres COPY, notifications (Redis + BullMQ), transforms, monitoring, and tests.
 
+## Implementation status
+
+| Item | Status |
+|------|--------|
+| 2. Fastify `decorate` / explicit deps | **Done (partial):** `createStreamApiContainer()` in `src/composition/dependency-container.ts`; routes take `UploadRouteDeps` / `ProcessRouteDeps` / `StatusRouteDeps`; `server.ts` wires container → routes. No `app.decorate` for services. |
+| 1. Fat `process.ts` handler | Open — orchestration still in route; next step is extracting a use case class. |
+
 ## Improvement items
 
 ### 1. Fat HTTP handler in `routes/process.ts` (SRP / testability)

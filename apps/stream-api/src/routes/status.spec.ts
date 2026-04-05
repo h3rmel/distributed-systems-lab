@@ -1,12 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import fastify, { type FastifyInstance } from 'fastify';
+import type { StatusService } from '#/notifications/status.service';
 import { statusRoutes } from './status';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    statusService: { get: ReturnType<typeof vi.fn> };
-  }
-}
 
 describe('Status Routes', () => {
   let app: FastifyInstance;
@@ -15,9 +10,9 @@ describe('Status Routes', () => {
   beforeAll(async () => {
     app = fastify();
 
-    app.decorate('statusService', { get: getMock });
-
-    await app.register(statusRoutes);
+    await statusRoutes(app, {
+      statusService: { get: getMock } as unknown as StatusService,
+    });
     await app.ready();
   });
 

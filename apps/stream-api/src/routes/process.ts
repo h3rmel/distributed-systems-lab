@@ -4,12 +4,18 @@ import { pipeline } from 'node:stream/promises';
 import { ValidationTransform } from '#/transforms/validation';
 import { FormatterTransform } from '#/transforms/formatter';
 import { WebhookCallbackPayload } from '#/notifications/types';
+import type { ProcessRouteDeps } from '#/composition/route-deps';
 
 /**
  * Processing routes for CSV file ingestion.
  * Stage 2: Object Storage → Database
  */
-export async function processRoutes(app: FastifyInstance): Promise<void> {
+export async function processRoutes(
+  app: FastifyInstance,
+  deps: ProcessRouteDeps,
+): Promise<void> {
+  const { storageService, statusService, webhookQueue, databaseService } = deps;
+
   /**
    * POST /upload/:uploadId/process
    * Downloads file from S3, validates, and bulk inserts into Postgres.
@@ -25,13 +31,13 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       // 1. Update status to processing
-      await app.statusService.update(uploadId, {
+      await statusService.update(uploadId, {
         status: 'processing',
         startedAt: new Date().toISOString(),
       });
 
       // 2. Download file stream from S3
-      const s3Stream = await app.storageService.download(objectKey);
+      const s3Stream = await storageService.download(objectKey);
 
       // 3. Create transforms
       const csvParser = parse({ headers: true });
@@ -39,24 +45,31 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       const formatterTransform = new FormatterTransform();
 
       // 4. Create Postgres COPY stream
-      const { stream: pgStream, done } = await app.databaseService.createCopyStream();
+      const { stream: pgStream, done } =
+        await databaseService.createCopyStream();
       pgCleanup = done;
 
       // 5. Execute pipeline: S3 → CSV Parser → Validation → Formatter → Postgres
-      await pipeline(s3Stream, csvParser, validationTransform, formatterTransform, pgStream);
+      await pipeline(
+        s3Stream,
+        csvParser,
+        validationTransform,
+        formatterTransform,
+        pgStream,
+      );
 
       // 6. Cleanup: Release DB connection
       await pgCleanup();
       pgCleanup = null;
 
       // 7. Delete from S3 after successful processing
-      await app.storageService.delete(objectKey);
+      await storageService.delete(objectKey);
 
       // 8. Update status to completed
       const stats = validationTransform.getStats();
       const rowsProcessed = stats.total - stats.invalid;
 
-      await app.statusService.update(uploadId, {
+      await statusService.update(uploadId, {
         status: 'completed',
         completedAt: new Date().toISOString(),
         rowsProcessed,
@@ -64,7 +77,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       });
 
       // 9. Enqueue webhook callback if callbackUrl is provided
-      const record = await app.statusService.get(uploadId);
+      const record = await statusService.get(uploadId);
 
       if (record?.callbackUrl) {
         const payload: WebhookCallbackPayload = {
@@ -75,7 +88,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
           timestamp: new Date().toISOString(),
         };
 
-        await app.webhookQueue.enqueue(uploadId, record.callbackUrl, payload);
+        await webhookQueue.enqueue(uploadId, record.callbackUrl, payload);
       }
 
       // 10. Return success with stats
@@ -96,13 +109,13 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
       try {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-        await app.statusService.update(uploadId, {
+        await statusService.update(uploadId, {
           status: 'failed',
           error: errorMessage,
           completedAt: new Date().toISOString(),
         });
 
-        const record = await app.statusService.get(uploadId);
+        const record = await statusService.get(uploadId);
         if (record?.callbackUrl) {
           const payload: WebhookCallbackPayload = {
             uploadId,
@@ -112,7 +125,7 @@ export async function processRoutes(app: FastifyInstance): Promise<void> {
             timestamp: new Date().toISOString(),
           };
 
-          await app.webhookQueue.enqueue(uploadId, record.callbackUrl, payload);
+          await webhookQueue.enqueue(uploadId, record.callbackUrl, payload);
         }
       } catch (statusError) {
         request.log.error(statusError, 'Failed to update status after processing error');

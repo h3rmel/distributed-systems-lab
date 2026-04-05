@@ -18,7 +18,7 @@ distributed-systems-lab/
 ├── apps/
 │   ├── ingestion-api/     (NestJS + Fastify + BullMQ) - ✅ COMPLETE (with 97%+ test coverage)
 │   ├── live-dashboard/    (Next.js 16 + Zustand 5 + Socket.io) - ✅ COMPLETE (with Shadcn UI + Docker)
-│   └── stream-api/        (Node.js Streams + Fastify) - ✅ COMPLETE (with notification system)
+│   └── stream-api/        (Node.js Streams + Fastify + `src/composition/` manual DI) - ✅ COMPLETE (notification system)
 ├── packages/
 │   ├── dto/               ✅ @distributed-systems-lab/dto
 │   ├── database/          ✅ @distributed-systems-lab/database
@@ -76,6 +76,7 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-04-05 | Refactor | Stream API: `createStreamApiContainer()` in `apps/stream-api/src/composition/`; typed route deps (`UploadRouteDeps`, `ProcessRouteDeps`, `StatusRouteDeps`); routes take explicit deps (no Fastify `decorate` for services); `uploadDeps()` / `processDeps()` / `statusDeps()`; Vitest coverage excludes `src/composition/**`; see `docs/STREAM-API-COUPLING-IMPROVEMENTS.md` |
 | 2026-04-05 | Refactor | Ingestion API coupling: `RedisModule` + shared `REDIS_CLIENT`, `JobCompletedNotifier` port (`MetricsGateway` implements), `getCorsOptions` for Fastify + Socket.io, `WorkerModule` imports `MetricsModule` (no `@Global`), `DatabaseHealthIndicator.isHealthy`, safer processor logs + ordering JSDoc |
 | 2026-04-05 | Docs | `docs/INGESTION-API-COUPLING-IMPROVEMENTS.md`, `docs/STREAM-API-COUPLING-IMPROVEMENTS.md`, adr README “related documentation”; TODO + memory bank: production deployment out of scope |
 | 2026-04-05 | Test | ingestion-api `app.e2e-spec`: assert `GET /` DB probe body; `afterEach` closes Nest app |
@@ -201,6 +202,7 @@ distributed-systems-lab/
   - Phase 3.11: Docker Configuration (multi-stage Dockerfile)
   - Phase 3.12: OOM Testing (5M rows in 512MB container) — PASSED
   - Phase 3.14: Notification System (Redis status storage, BullMQ webhook delivery, status polling)
+  - Post-phase refactor: Manual composition root — `composition/dependency-container.ts`, `route-deps.ts`, explicit deps into upload/process/status routes (`uploadDeps` / `processDeps` / `statusDeps`)
 
 ### Shared Packages
 | Package | Status | Description |
@@ -266,6 +268,9 @@ distributed-systems-lab/
 - **Package Manager**: pnpm (v10.23.0) with workspaces
 - **Structure**: `apps/*` for applications, `packages/*` for shared code
 - **Shared Code**: Types (dto), database (Drizzle), linting (ESLint configs)
+
+### Stream API wiring (Decided)
+- **Pattern**: Plain-TS **manual composition root** (no DI framework). Env → `createStreamApiContainer()` → singletons; routes receive `container.uploadDeps()` / `processDeps()` / `statusDeps()` instead of `FastifyInstance` decoration for app services.
 
 ### Development Workflow
 - **Memory Bank**: Native `.cursor/rules` system with `.mdc` files
@@ -359,3 +364,5 @@ STREAM_API_PORT=3002
 - Phase 4: Integration & Documentation (E2E tests, READMEs, benchmarks, scripts)
 
 **Out of scope:** Production deployment — this lab is not intended for deployment; no Docker production hardening, Kubernetes, or CI/CD roadmap.
+
+**Optional refinements:** Stream API — remaining items in `docs/STREAM-API-COUPLING-IMPROVEMENTS.md` (e.g. extract CSV process use case from `routes/process.ts`, object-key helper, COPY SQL vs shared package).
