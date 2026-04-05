@@ -1,54 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
 import { IdempotencyService } from './idempotency.service';
 import Redis from 'ioredis';
-
-// Mock ioredis
-jest.mock('ioredis');
+import { REDIS_CLIENT } from 'src/redis/redis.constants';
 
 describe('IdempotencyService', () => {
   let service: IdempotencyService;
   let mockRedis: jest.Mocked<Redis>;
-  let mockConfigService: jest.Mocked<ConfigService>;
   let mockExists: jest.Mock;
   let mockSet: jest.Mock;
-  let mockQuit: jest.Mock;
 
   beforeEach(async () => {
     mockExists = jest.fn();
     mockSet = jest.fn();
-    mockQuit = jest.fn();
 
     mockRedis = {
       exists: mockExists,
       set: mockSet,
-      quit: mockQuit,
     } as unknown as jest.Mocked<Redis>;
-
-    mockConfigService = {
-      get: jest.fn(),
-    } as unknown as jest.Mocked<ConfigService>;
-
-    // Mock Redis constructor
-    (Redis as unknown as jest.Mock).mockImplementation(() => mockRedis);
-
-    // Setup default config values
-    mockConfigService.get.mockImplementation(function (
-      this: void,
-      key: string,
-      defaultValue?: unknown,
-    ): unknown {
-      if (key === 'REDIS_HOST') return 'localhost';
-      if (key === 'REDIS_PORT') return 6379;
-      return defaultValue;
-    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IdempotencyService,
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: REDIS_CLIENT,
+          useValue: mockRedis,
         },
       ],
     }).compile();
@@ -100,7 +75,7 @@ describe('IdempotencyService', () => {
   describe('markProcessed', () => {
     it('should mark eventId as processed with 24h TTL', async () => {
       const eventId = 'evt_test_003';
-      const expectedTtl = 60 * 60 * 24; // 24 hours in seconds
+      const expectedTtl = 60 * 60 * 24;
       mockSet.mockResolvedValue('OK');
 
       await service.markProcessed(eventId);
@@ -126,16 +101,6 @@ describe('IdempotencyService', () => {
         'EX',
         86400,
       );
-    });
-  });
-
-  describe('onModuleDestroy', () => {
-    it('should close Redis connection on module destroy', async () => {
-      mockQuit.mockResolvedValue('OK');
-
-      await service.onModuleDestroy();
-
-      expect(mockQuit).toHaveBeenCalledTimes(1);
     });
   });
 });

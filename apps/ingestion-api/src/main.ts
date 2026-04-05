@@ -9,6 +9,7 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
+import { getCorsOptions } from './config/cors-options';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -23,12 +24,7 @@ async function bootstrap() {
 
   await app.register(helmet);
 
-  await app.register(cors, {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [
-      'http://localhost:3000',
-    ],
-    credentials: true,
-  });
+  await app.register(cors, getCorsOptions());
 
   await app.register(rateLimit, {
     max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),

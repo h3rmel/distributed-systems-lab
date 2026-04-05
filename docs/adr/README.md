@@ -43,6 +43,11 @@ Create an ADR when:
 - The decision affects multiple projects or has long-term implications
 - The decision needs to be documented for future reference
 
+## Related documentation (backlog, not ADRs)
+
+- [Ingestion API coupling & SOLID improvements](../INGESTION-API-COUPLING-IMPROVEMENTS.md) — future refactor checklist; promote to a numbered ADR when a specific approach is **accepted**.
+- [Stream API coupling & SOLID improvements](../STREAM-API-COUPLING-IMPROVEMENTS.md) — same; covers routes, composition root, Redis/BullMQ, COPY/schema alignment, logging.
+
 ## References
 
 - [SPEC-INGESTION-API.md](../SPEC-INGESTION-API.md)

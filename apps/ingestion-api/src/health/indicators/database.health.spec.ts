@@ -49,12 +49,12 @@ describe('DatabaseHealthIndicator', () => {
     expect(indicator).toBeDefined();
   });
 
-  describe('isHealth', () => {
+  describe('isHealthy', () => {
     it('should return up when database is healthy (SELECT 1 succeeds)', async () => {
       const key = 'database';
       mockExecute.mockResolvedValue([]);
 
-      const result = await indicator.isHealth(key);
+      const result = await indicator.isHealthy(key);
 
       expect(mockExecute).toHaveBeenCalledWith('SELECT 1');
       expect(mockCheck).toHaveBeenCalledWith(key);
@@ -66,7 +66,7 @@ describe('DatabaseHealthIndicator', () => {
       const dbError = new Error('Connection refused');
       mockExecute.mockRejectedValue(dbError);
 
-      await expect(indicator.isHealth(key)).rejects.toThrow(
+      await expect(indicator.isHealthy(key)).rejects.toThrow(
         'Connection refused',
       );
     });
@@ -75,7 +75,7 @@ describe('DatabaseHealthIndicator', () => {
       const customKey = 'postgres';
       mockExecute.mockResolvedValue([]);
 
-      await indicator.isHealth(customKey);
+      await indicator.isHealthy(customKey);
 
       expect(mockCheck).toHaveBeenCalledWith(customKey);
     });

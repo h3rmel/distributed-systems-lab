@@ -782,33 +782,9 @@ const logger = createLogger('live-dashboard');
 
 ---
 
-## Deployment Checklist (Optional - Production)
+## Deployment — out of scope
 
-### Docker Production Images
-- [ ] Optimize Dockerfiles for production:
-  - [ ] Multi-stage builds
-  - [ ] Minimal base images (alpine)
-  - [ ] Non-root user
-- [ ] Build production images: `docker compose -f docker-compose.prod.yml build`
-- [ ] Test production images locally
-
-### Kubernetes (Optional)
-- [ ] Create Kubernetes manifests:
-  - [ ] Deployments for each service
-  - [ ] Services and Ingress
-  - [ ] ConfigMaps for configuration
-  - [ ] Secrets for credentials
-  - [ ] PersistentVolumeClaims for PostgreSQL/Redis
-- [ ] Apply manifests: `kubectl apply -f k8s/`
-- [ ] Verify health checks work
-
-### CI/CD (Optional)
-- [ ] Setup GitHub Actions / GitLab CI:
-  - [ ] Lint and test on PR
-  - [ ] Build Docker images on merge
-  - [ ] Deploy to staging
-  - [ ] Run acceptance tests
-  - [ ] Deploy to production (manual approval)
+This lab is not intended for production deployment. Existing Dockerfiles support local/dev and benchmark scenarios only; no roadmap for production image hardening, Kubernetes, or CI/CD deploy pipelines.
 
 ---
 

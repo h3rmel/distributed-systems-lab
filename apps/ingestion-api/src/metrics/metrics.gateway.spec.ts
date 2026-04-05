@@ -26,6 +26,26 @@ describe('MetricsGateway', () => {
     expect(gateway).toBeDefined();
   });
 
+  describe('notifyJobCompleted', () => {
+    it('should emit job-completed event with correct payload', () => {
+      const event: JobCompletedEvent = {
+        jobId: 'job-123',
+        eventId: 'evt_test_001',
+        provider: 'stripe',
+        processingTime: 45,
+        timestamp: '2026-01-10T16:00:00.000Z',
+      };
+
+      gateway.notifyJobCompleted(event);
+
+      expect(mockServer.emit).toHaveBeenCalledTimes(1);
+      expect(mockServer.emit).toHaveBeenCalledWith(
+        SocketEvents.JOB_COMPLETED,
+        event,
+      );
+    });
+  });
+
   describe('emitJobCompleted', () => {
     it('should emit job-completed event with correct payload', () => {
       const event: JobCompletedEvent = {

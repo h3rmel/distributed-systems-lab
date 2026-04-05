@@ -7,12 +7,19 @@ import { IdempotencyService } from './idempotency.service';
 import { Job } from 'bullmq';
 import { WebhookJobData } from '@distributed-systems-lab/dto';
 import { webhookEvents } from '@distributed-systems-lab/database';
-import { MetricsGateway } from 'src/metrics/metrics.gateway';
+import {
+  JOB_COMPLETED_NOTIFIER,
+  type JobCompletedNotifier,
+} from 'src/metrics/job-completed-notifier';
 
 /**
  * Background processor for webhook events.
  * Consumes jobs from the webhooks queue and persists them to PostgreSQL.
  * Implements idempotency checks to prevent duplicate processing.
+ *
+ * **Ordering note:** DB insert and Redis idempotency mark are not atomic. If the process
+ * crashes after insert but before `markProcessed`, a retry could duplicate the row unless
+ * DB uniqueness on `event_id` rejects it — acceptable tradeoff for this lab.
  */
 @Processor(QUEUE_NAMES.WEBHOOKS)
 export class WebhookProcessor extends WorkerHost {
@@ -21,7 +28,8 @@ export class WebhookProcessor extends WorkerHost {
     private readonly logger: PinoLogger,
     @Inject(DATABASE_CONNECTION) private readonly db: DatabaseConnection,
     private readonly idempotencyService: IdempotencyService,
-    private readonly metricsGateway: MetricsGateway,
+    @Inject(JOB_COMPLETED_NOTIFIER)
+    private readonly jobCompletedNotifier: JobCompletedNotifier,
   ) {
     super();
   }
@@ -33,13 +41,12 @@ export class WebhookProcessor extends WorkerHost {
    * @param job - BullMQ job containing WebhookJobData payload
    */
   async process(job: Job<WebhookJobData>): Promise<void> {
-    const { eventId, provider, timestamp, data } = job.data;
+    const { eventId, provider, timestamp } = job.data;
 
     this.logger.info('Processing webhook', {
       eventId,
       provider,
       timestamp,
-      data,
     });
 
     const alreadyProcessed = await this.idempotencyService.isProcessed(eventId);
@@ -53,14 +60,14 @@ export class WebhookProcessor extends WorkerHost {
       provider,
       eventId,
       timestamp: new Date(timestamp),
-      data,
+      data: job.data.data,
     });
 
     await this.idempotencyService.markProcessed(eventId);
 
     const processingTime = Date.now() - (job.processedOn ?? Date.now());
 
-    this.metricsGateway.emitJobCompleted({
+    this.jobCompletedNotifier.notifyJobCompleted({
       jobId: job.id ?? 'unknown',
       eventId,
       provider,

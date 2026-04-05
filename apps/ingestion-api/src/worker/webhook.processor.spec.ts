@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { WebhookProcessor } from './webhook.processor';
 import { IdempotencyService } from './idempotency.service';
-import { MetricsGateway } from 'src/metrics/metrics.gateway';
+import { JOB_COMPLETED_NOTIFIER } from 'src/metrics/job-completed-notifier';
 import { DATABASE_CONNECTION, type DatabaseConnection } from 'src/database';
 import { Job } from 'bullmq';
 import {
@@ -16,12 +16,11 @@ describe('WebhookProcessor', () => {
   let processor: WebhookProcessor;
   let mockDb: jest.Mocked<DatabaseConnection>;
   let mockIdempotencyService: jest.Mocked<IdempotencyService>;
-  let mockMetricsGateway: jest.Mocked<MetricsGateway>;
   let mockLogger: jest.Mocked<PinoLogger>;
   let mockIsProcessed: jest.Mock;
   let mockMarkProcessed: jest.Mock;
   let mockInsert: jest.Mock;
-  let mockEmitJobCompleted: jest.Mock;
+  let mockNotifyJobCompleted: jest.Mock;
   let mockLoggerInfo: jest.Mock;
   let mockLoggerWarn: jest.Mock;
   let mockLoggerDebug: jest.Mock;
@@ -30,7 +29,7 @@ describe('WebhookProcessor', () => {
     mockIsProcessed = jest.fn();
     mockMarkProcessed = jest.fn();
     mockInsert = jest.fn();
-    mockEmitJobCompleted = jest.fn();
+    mockNotifyJobCompleted = jest.fn();
     mockLoggerInfo = jest.fn();
     mockLoggerWarn = jest.fn();
     mockLoggerDebug = jest.fn();
@@ -43,10 +42,6 @@ describe('WebhookProcessor', () => {
       isProcessed: mockIsProcessed,
       markProcessed: mockMarkProcessed,
     } as unknown as jest.Mocked<IdempotencyService>;
-
-    mockMetricsGateway = {
-      emitJobCompleted: mockEmitJobCompleted,
-    } as unknown as jest.Mocked<MetricsGateway>;
 
     mockLogger = {
       info: mockLoggerInfo,
@@ -66,8 +61,8 @@ describe('WebhookProcessor', () => {
           useValue: mockIdempotencyService,
         },
         {
-          provide: MetricsGateway,
-          useValue: mockMetricsGateway,
+          provide: JOB_COMPLETED_NOTIFIER,
+          useValue: { notifyJobCompleted: mockNotifyJobCompleted },
         },
         {
           provide: `PinoLogger:${WebhookProcessor.name}`,
@@ -110,7 +105,7 @@ describe('WebhookProcessor', () => {
       expect(mockIsProcessed).toHaveBeenCalledWith(jobData.eventId);
       expect(mockInsert).not.toHaveBeenCalled();
       expect(mockMarkProcessed).not.toHaveBeenCalled();
-      expect(mockEmitJobCompleted).not.toHaveBeenCalled();
+      expect(mockNotifyJobCompleted).not.toHaveBeenCalled();
       expect(mockLoggerWarn).toHaveBeenCalledWith(
         { eventId: jobData.eventId, provider: jobData.provider },
         'Duplicate event skipped',
@@ -156,7 +151,7 @@ describe('WebhookProcessor', () => {
       expect(mockMarkProcessed).toHaveBeenCalled();
     });
 
-    it('should emit job-completed event via MetricsGateway', async () => {
+    it('should notify job-completed via JobCompletedNotifier', async () => {
       const jobData = createTestJobData({
         eventId: 'evt_emit_001',
         provider: 'stripe',
@@ -172,9 +167,9 @@ describe('WebhookProcessor', () => {
 
       await processor.process(job);
 
-      expect(mockEmitJobCompleted).toHaveBeenCalledTimes(1);
+      expect(mockNotifyJobCompleted).toHaveBeenCalledTimes(1);
       const emittedEvent = (
-        mockEmitJobCompleted.mock.calls[0] as [JobCompletedEvent]
+        mockNotifyJobCompleted.mock.calls[0] as [JobCompletedEvent]
       )[0];
       expect(emittedEvent.eventId).toBe(jobData.eventId);
       expect(emittedEvent.provider).toBe(jobData.provider);
@@ -197,7 +192,7 @@ describe('WebhookProcessor', () => {
       await processor.process(job);
 
       const emittedEvent = (
-        mockEmitJobCompleted.mock.calls[0] as [JobCompletedEvent]
+        mockNotifyJobCompleted.mock.calls[0] as [JobCompletedEvent]
       )[0];
       expect(emittedEvent.processingTime).toBeGreaterThanOrEqual(100);
     });
@@ -218,7 +213,6 @@ describe('WebhookProcessor', () => {
         eventId: jobData.eventId,
         provider: jobData.provider,
         timestamp: jobData.timestamp,
-        data: jobData.data,
       });
       expect(mockLoggerDebug).toHaveBeenCalledWith(
         'WebSocket event emitted',
@@ -253,7 +247,7 @@ describe('WebhookProcessor', () => {
         'Database connection failed',
       );
       expect(mockMarkProcessed).not.toHaveBeenCalled();
-      expect(mockEmitJobCompleted).not.toHaveBeenCalled();
+      expect(mockNotifyJobCompleted).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,17 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppService } from './app.service';
-import { DATABASE_CONNECTION } from './database';
-import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import * as schema from '@distributed-systems-lab/database';
+import { DATABASE_CONNECTION, type DatabaseConnection } from './database';
 
 describe('AppService', () => {
   let service: AppService;
-  let mockDb: jest.Mocked<PostgresJsDatabase<typeof schema>>;
+  let mockDb: jest.Mocked<DatabaseConnection>;
 
   beforeEach(async () => {
     mockDb = {
       execute: jest.fn(),
-    } as unknown as jest.Mocked<PostgresJsDatabase<typeof schema>>;
+    } as unknown as jest.Mocked<DatabaseConnection>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
