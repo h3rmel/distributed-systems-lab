@@ -76,6 +76,9 @@ distributed-systems-lab/
 ## 3. Recent Changes
 | Date | Type | Description |
 | :--- | :--- | :--- |
+| 2026-04-05 | Refactor | Ingestion API coupling: `RedisModule` + shared `REDIS_CLIENT`, `JobCompletedNotifier` port (`MetricsGateway` implements), `getCorsOptions` for Fastify + Socket.io, `WorkerModule` imports `MetricsModule` (no `@Global`), `DatabaseHealthIndicator.isHealthy`, safer processor logs + ordering JSDoc |
+| 2026-04-05 | Docs | `docs/INGESTION-API-COUPLING-IMPROVEMENTS.md`, `docs/STREAM-API-COUPLING-IMPROVEMENTS.md`, adr README “related documentation”; TODO + memory bank: production deployment out of scope |
+| 2026-04-05 | Test | ingestion-api `app.e2e-spec`: assert `GET /` DB probe body; `afterEach` closes Nest app |
 | 2026-03-19 | Docs | Phase 4.3: Comprehensive READMEs for all apps and packages, root README with architecture overview |
 | 2026-03-19 | Test | Phase 4.1: E2E test suite (tests/e2e/) — Vitest, 4 suites: ingestion, streaming, dashboard WebSocket, failure scenarios |
 | 2026-03-19 | Infra | Phase 4: Fix docker-compose healthchecks for ingestion-api and stream-api (were missing) |
@@ -355,4 +358,4 @@ STREAM_API_PORT=3002
 - Phase 3: Stream API (98.67% coverage, 57 MB avg for 5M rows)
 - Phase 4: Integration & Documentation (E2E tests, READMEs, benchmarks, scripts)
 
-**Remaining (optional):** Deployment Checklist — Docker production images, Kubernetes manifests, CI/CD pipeline.
+**Out of scope:** Production deployment — this lab is not intended for deployment; no Docker production hardening, Kubernetes, or CI/CD roadmap.

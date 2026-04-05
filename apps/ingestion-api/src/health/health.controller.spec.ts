@@ -22,7 +22,7 @@ describe('HealthController', () => {
     } as unknown as jest.Mocked<HealthCheckService>;
 
     databaseIndicator = {
-      isHealth: jest.fn(),
+      isHealthy: jest.fn(),
     } as unknown as jest.Mocked<DatabaseHealthIndicator>;
 
     redisIndicator = {
@@ -82,7 +82,7 @@ describe('HealthController', () => {
         },
       };
 
-      databaseIndicator.isHealth.mockResolvedValue({
+      databaseIndicator.isHealthy.mockResolvedValue({
         database: { status: 'up' },
       });
       redisIndicator.isHealthy.mockResolvedValue({
@@ -120,7 +120,7 @@ describe('HealthController', () => {
         },
       };
 
-      databaseIndicator.isHealth.mockResolvedValue({
+      databaseIndicator.isHealthy.mockResolvedValue({
         database: { status: 'up' },
       });
       redisIndicator.isHealthy.mockResolvedValue({
@@ -153,7 +153,7 @@ describe('HealthController', () => {
         },
       };
 
-      databaseIndicator.isHealth.mockRejectedValue(
+      databaseIndicator.isHealthy.mockRejectedValue(
         new Error('Connection failed'),
       );
 

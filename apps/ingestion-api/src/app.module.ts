@@ -9,6 +9,8 @@ import { WebhookModule } from './webhook';
 import { WorkerModule } from './worker';
 import { HealthModule } from './health';
 import { MetricsModule } from './metrics';
+import { RedisModule } from './redis';
+import { redisConnectionFromConfig } from './redis/redis-connection';
 
 @Module({
   imports: [
@@ -52,12 +54,11 @@ import { MetricsModule } from './metrics';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get('REDIS_HOST', 'localhost'),
-          port: config.get('REDIS_PORT', 6379),
-        },
+        connection: redisConnectionFromConfig(config),
       }),
     }),
+
+    RedisModule,
 
     WebhookModule,
     WorkerModule,

@@ -12,7 +12,7 @@ export class DatabaseHealthIndicator {
     @Inject(DATABASE_CONNECTION) private readonly db: DatabaseConnection,
   ) {}
 
-  async isHealth(key: string): Promise<HealthIndicatorResult> {
+  async isHealthy(key: string): Promise<HealthIndicatorResult> {
     await this.db.execute('SELECT 1');
 
     return this.healthIndicatorService.check(key).up();

@@ -1,9 +1,15 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MetricsGateway } from './metrics.gateway';
+import { JOB_COMPLETED_NOTIFIER } from './job-completed-notifier';
 
-@Global()
 @Module({
-  providers: [MetricsGateway],
-  exports: [MetricsGateway],
+  providers: [
+    MetricsGateway,
+    {
+      provide: JOB_COMPLETED_NOTIFIER,
+      useExisting: MetricsGateway,
+    },
+  ],
+  exports: [MetricsGateway, JOB_COMPLETED_NOTIFIER],
 })
 export class MetricsModule {}

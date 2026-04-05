@@ -1,24 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RedisHealthIndicator } from './redis.health';
 import { HealthIndicatorService } from '@nestjs/terminus';
-import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-
-// Mock ioredis
-jest.mock('ioredis');
+import { REDIS_CLIENT } from 'src/redis/redis.constants';
 
 describe('RedisHealthIndicator', () => {
   let indicator: RedisHealthIndicator;
   let mockRedis: jest.Mocked<Redis>;
   let mockHealthIndicatorService: jest.Mocked<HealthIndicatorService>;
-  let mockConfigService: jest.Mocked<ConfigService>;
   let mockPing: jest.Mock;
-  let mockQuit: jest.Mock;
   let mockCheck: jest.Mock;
 
   beforeEach(async () => {
     mockPing = jest.fn();
-    mockQuit = jest.fn();
     mockCheck = jest.fn().mockReturnValue({
       up: jest.fn().mockReturnValue({ redis: { status: 'up' } }),
       down: jest.fn().mockReturnValue({ redis: { status: 'down' } }),
@@ -26,28 +20,11 @@ describe('RedisHealthIndicator', () => {
 
     mockRedis = {
       ping: mockPing,
-      quit: mockQuit,
     } as unknown as jest.Mocked<Redis>;
 
     mockHealthIndicatorService = {
       check: mockCheck,
     } as unknown as jest.Mocked<HealthIndicatorService>;
-
-    mockConfigService = {
-      get: jest.fn(),
-    } as unknown as jest.Mocked<ConfigService>;
-
-    // Mock Redis constructor
-    (Redis as unknown as jest.Mock).mockImplementation(() => mockRedis);
-
-    // Setup default config values
-    mockConfigService.get.mockImplementation(
-      (key: string, defaultValue?: unknown) => {
-        if (key === 'REDIS_HOST') return 'localhost';
-        if (key === 'REDIS_PORT') return 6379;
-        return defaultValue;
-      },
-    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,8 +34,8 @@ describe('RedisHealthIndicator', () => {
           useValue: mockHealthIndicatorService,
         },
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
+          provide: REDIS_CLIENT,
+          useValue: mockRedis,
         },
       ],
     }).compile();
@@ -114,16 +91,6 @@ describe('RedisHealthIndicator', () => {
       await indicator.isHealthy(customKey);
 
       expect(mockCheck).toHaveBeenCalledWith(customKey);
-    });
-  });
-
-  describe('onModuleDestroy', () => {
-    it('should close Redis connection on module destroy', async () => {
-      mockQuit.mockResolvedValue('OK');
-
-      await indicator.onModuleDestroy();
-
-      expect(mockQuit).toHaveBeenCalledTimes(1);
     });
   });
 });
