@@ -1,10 +1,16 @@
 import { FastifyInstance } from 'fastify';
+import type { StatusRouteDeps } from '#/composition/route-deps';
 
 /**
  * Status polling routes for upload processing lifecycle.
  * Module F: Notification System - Status Endpoint.
  */
-export async function statusRoutes(app: FastifyInstance): Promise<void> {
+export async function statusRoutes(
+  app: FastifyInstance,
+  deps: StatusRouteDeps,
+): Promise<void> {
+  const { statusService } = deps;
+
   /**
    * GET /upload/:uploadId/status
    * Returns the current processing status and metadata for a given upload.
@@ -14,7 +20,7 @@ export async function statusRoutes(app: FastifyInstance): Promise<void> {
   }>('/upload/:uploadId/status', async (request, reply) => {
     const { uploadId } = request.params;
 
-    const record = await app.statusService.get(uploadId);
+    const record = await statusService.get(uploadId);
 
     if (!record) {
       return reply.status(404).send({

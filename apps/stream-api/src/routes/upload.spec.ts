@@ -1,14 +1,9 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import fastify, { type FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
+import type { StorageService } from '#/storage/storage.service';
+import type { StatusService } from '#/notifications/status.service';
 import { uploadRoutes } from './upload';
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    storageService: { upload: ReturnType<typeof vi.fn> };
-    statusService: { create: ReturnType<typeof vi.fn> };
-  }
-}
 
 describe('Upload Routes', () => {
   let app: FastifyInstance;
@@ -20,10 +15,10 @@ describe('Upload Routes', () => {
 
     await app.register(multipart);
 
-    app.decorate('storageService', { upload: uploadMock });
-    app.decorate('statusService', { create: createMock });
-
-    await app.register(uploadRoutes);
+    await uploadRoutes(app, {
+      storageService: { upload: uploadMock } as unknown as StorageService,
+      statusService: { create: createMock } as unknown as StatusService,
+    });
     await app.ready();
   });
 
